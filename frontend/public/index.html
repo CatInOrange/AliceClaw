@@ -1,0 +1,2519 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lunaria</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-0: #0f0f1a;
+      --bg-1: #1a1a2e;
+      --bg-2: #252540;
+      --fg: #f0f0f5;
+      --muted: #a0a0b0;
+      --accent: #ff6b9d;
+      --accent-2: #c084fc;
+      --line: rgba(255, 255, 255, 0.06);
+      --bubble-user: linear-gradient(135deg, #ff6b9d, #c084fc);
+      --bubble-assistant: rgba(255, 255, 255, 0.06);
+    }
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg-0);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    /* Header */
+    header {
+      padding: 12px 20px;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    #status {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    #status.error {
+      color: #ff6b6b;
+    }
+
+    /* Icon styles */
+    .icon {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+
+    .icon-small {
+      width: 16px;
+      height: 16px;
+    }
+
+    .icon-large {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Main Layout - 左右分栏 */
+    main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 0;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Stage - 左侧模型区域 */
+    .stage-wrap {
+      position: relative;
+      min-height: 0;
+      background: radial-gradient(circle at center, #1a1a3a, var(--bg-0));
+      display: flex;
+      flex-direction: column;
+      contain: layout paint;
+    }
+
+    #stage {
+      flex: 1;
+      width: 100%;
+      display: block;
+      contain: paint;
+      transform: translateZ(0);
+    }
+
+    /* Chat Panel - 右侧聊天区域 */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-1);
+      border-left: 1px solid var(--line);
+      min-height: 0;
+      position: relative;
+      contain: layout paint;
+    }
+
+    /* Chat Header */
+    .chat-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    body.desktop-shell-enabled:not(.desktop-mode-pet) .chat-header {
+      cursor: grab;
+    }
+
+    body.desktop-shell-enabled:not(.desktop-mode-pet) .chat-header:active {
+      cursor: grabbing;
+    }
+
+    .chat-header-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .chat-header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Sessions Panel */
+    .sessions-panel {
+      position: absolute;
+      top: 52px;
+      left: 0;
+      right: 0;
+      max-height: 300px;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--line);
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+    }
+
+    .sessions-panel.open {
+      display: flex;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .sessions-panel {
+      display: none !important;
+    }
+
+    .sessions-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .sessions-panel-close {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 0;
+      background: var(--bg-2);
+      color: var(--fg);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sessions-panel-close:hover {
+      background: var(--line);
+    }
+
+    .sessions-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .session-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+
+    .session-item:hover {
+      background: var(--bg-2);
+    }
+
+    .session-item.active {
+      background: var(--bg-2);
+      border: 1px solid var(--accent);
+    }
+
+    .session-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-item-name {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-item-time {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .session-item-new {
+      font-size: 11px;
+      color: var(--accent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(255, 107, 157, 0.15);
+      cursor: pointer;
+    }
+
+    .session-item-new:hover {
+      background: rgba(255, 107, 157, 0.25);
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 0;
+      background: var(--bg-2);
+      color: var(--fg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: var(--line);
+    }
+
+    .icon-btn svg {
+      fill: currentColor;
+    }
+
+    /* Messages - 类似微信的聊天气泡 */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      contain: layout paint;
+    }
+
+    .messages::-webkit-scrollbar {
+      display: none;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 85%;
+      contain: layout paint;
+    }
+
+    .message.user {
+      align-self: flex-end;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+    }
+
+    .message .meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      padding: 0 4px;
+    }
+
+    .message.user .meta {
+      text-align: right;
+    }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      contain: paint;
+    }
+
+    .message.assistant .bubble {
+      background: var(--bubble-assistant);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message.user .bubble {
+      background: var(--bubble-user);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.system {
+      align-self: center;
+    }
+
+    .message.system .bubble {
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* Quick Actions - 在输入框上方 */
+    .quick-actions-bar {
+      padding: 8px 16px;
+      background: var(--bg-1);
+      border-top: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .quick-actions-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .quick-actions-title {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .quick-actions-toggle {
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: transparent;
+      border: 0;
+    }
+
+    .quick-actions-toggle:hover {
+      background: var(--line);
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      max-height: 36px;
+      overflow: hidden;
+    }
+
+    .quick-actions.expanded {
+      max-height: none;
+    }
+
+    .quick-actions button {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      color: var(--fg);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .quick-actions button:hover {
+      background: var(--line);
+      border-color: var(--accent);
+      transform: translateZ(0) scale(1.03);
+    }
+
+    /* 表情动作展开面板 */
+    .expressions-panel {
+      display: none;
+      padding: 12px;
+      background: var(--bg-2);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .expressions-panel.expanded {
+      display: block;
+    }
+
+    .desktop-expressions-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px 4px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .desktop-expressions-header button {
+      border: 0;
+      background: rgba(255, 255, 255, 0.08);
+      color: #f0f0f5;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .desktop-expressions-panel {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 8px);
+      width: min(320px, calc(100vw - 60px));
+      display: none;
+      padding: 10px;
+      max-height: 240px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      background: rgba(24, 24, 34, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+      z-index: 5;
+    }
+
+    .desktop-expressions-panel.expanded {
+      display: block;
+    }
+
+    .desktop-expressions-panel .expressions-grid {
+      grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+      gap: 6px;
+    }
+
+    .desktop-expressions-panel .expressions-grid button {
+      padding: 6px;
+      font-size: 11px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .expressions-section {
+      margin-bottom: 12px;
+    }
+
+    .expressions-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .expressions-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .expressions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+    }
+
+    .expressions-grid button {
+      padding: 8px;
+      font-size: 12px;
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--fg);
+      cursor: pointer;
+    }
+
+    .expressions-grid button:hover {
+      border-color: var(--accent);
+      background: var(--line);
+    }
+
+    /* Chat Input Area */
+    .chat-input-area {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background: var(--bg-1);
+      flex-shrink: 0;
+    }
+
+    /* Drag overlay */
+    .drag-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 107, 157, 0.2);
+      border: 2px dashed var(--accent);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .drag-overlay.active {
+      display: flex;
+    }
+
+    .drag-overlay-text {
+      font-size: 18px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Camera Preview */
+    .camera-preview-container {
+      position: relative;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+      max-height: 150px;
+    }
+
+    .camera-preview-container video {
+      display: block;
+      width: 100%;
+      max-height: 150px;
+      object-fit: cover;
+    }
+
+    .camera-close-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .desktop-camera-preview-container {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .desktop-camera-preview-actions {
+      position: absolute;
+      left: 4px;
+      bottom: 4px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .desktop-camera-capture-btn {
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.45);
+      color: #f0f0f5;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .desktop-attachment-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    /* Attachments */
+    .attachment-preview {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+
+    .attachment-item {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .attachment-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attachment-item .remove-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: 0;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Toolbar */
+    .chat-toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .toolbar-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .toolbar-btn:hover {
+      color: var(--fg);
+      background: var(--line);
+    }
+
+    .toolbar-btn svg {
+      fill: currentColor;
+    }
+
+    /* Input */
+    .chat-input-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .chat-input-wrap textarea {
+      flex: 1;
+      min-height: 44px;
+      max-height: 120px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      padding: 10px 16px;
+      font: inherit;
+      color: var(--fg);
+      background: var(--bg-0);
+      font-size: 14px;
+      resize: none;
+      outline: none;
+    }
+
+    .chat-input-wrap textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+    }
+
+    .send-btn:hover {
+      opacity: 0.9;
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    .send-btn svg {
+      fill: currentColor;
+    }
+
+    /* Settings Menu - 配置菜单 */
+    .settings-menu {
+      position: fixed;
+      top: 60px;
+      right: 16px;
+      width: 360px;
+      max-height: calc(100vh - 80px);
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .settings-menu::-webkit-scrollbar {
+      display: none;
+    }
+
+    .settings-menu.expanded {
+      display: block;
+    }
+
+    .settings-section {
+      margin-bottom: 20px;
+    }
+
+    .settings-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .settings-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .settings-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 0;
+      background: var(--bg-2);
+      color: var(--fg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .settings-close:hover {
+      background: var(--line);
+    }
+
+    .settings-close svg {
+      fill: currentColor;
+    }
+
+    /* Section titles in settings */
+    .settings-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Form Elements */
+    select,
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      font: inherit;
+      color: var(--fg);
+      background: var(--bg-0);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    select:focus,
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Sliders */
+    .slider-group {
+      margin-bottom: 12px;
+    }
+
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .slider-group input[type="range"] {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--bg-2);
+      -webkit-appearance: none;
+      outline: none;
+    }
+
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Config Grid */
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .config-grid .wide {
+      grid-column: 1 / -1;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Toggle Button */
+    .toggle-btn {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      color: var(--fg);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .toggle-btn:hover {
+      background: var(--line);
+    }
+
+    /* Pill */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-2);
+      border-radius: 16px;
+      font-size: 12px;
+    }
+
+    .pill input[type="checkbox"] {
+      margin: 0;
+    }
+
+    /* File input styling */
+    .file-input-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--fg);
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+
+    .file-input-label:hover {
+      background: var(--line);
+      border-color: var(--accent);
+    }
+
+    .file-input-label input[type="file"] {
+      display: none;
+    }
+
+    .file-input-label svg {
+      fill: currentColor;
+    }
+
+    /* Hidden */
+    .hidden {
+      display: none !important;
+    }
+
+    /* Overlay for settings */
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 99;
+      display: none;
+    }
+
+    .settings-overlay.expanded {
+      display: block;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .settings-overlay,
+    body.desktop-shell-enabled.desktop-mode-pet .settings-menu {
+      display: none !important;
+    }
+
+    /* Desktop shell / Tauri mode */
+    body.desktop-shell-enabled {
+      background: transparent;
+    }
+
+    body.desktop-shell-enabled .stage-wrap {
+      overflow: hidden;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet {
+      background: transparent;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet header {
+      display: none;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet main {
+      grid-template-columns: 1fr;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .stage-wrap {
+      min-height: 100vh;
+      background: transparent;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet main {
+      min-height: 100vh;
+      background: transparent;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet #stage {
+      background: transparent !important;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .chat-panel {
+      display: none;
+    }
+
+    .desktop-shell {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      display: none;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      z-index: 80;
+    }
+
+    body.desktop-shell-enabled:not(.desktop-mode-pet) .desktop-shell {
+      display: flex;
+    }
+
+    .desktop-floating-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .desktop-floating-btn {
+      width: 44px;
+      height: 44px;
+      border: 0;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg);
+      background: rgba(26, 26, 46, 0.72);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+
+    .desktop-floating-btn:hover {
+      background: rgba(37, 37, 64, 0.88);
+    }
+
+    .desktop-floating-btn.active {
+      outline: 1px solid rgba(255, 255, 255, 0.18);
+      background: linear-gradient(135deg, rgba(255, 107, 157, 0.92), rgba(192, 132, 252, 0.92));
+    }
+
+    .desktop-pet-ui {
+      position: absolute;
+      inset: 0;
+      display: none;
+      pointer-events: none;
+      z-index: 90;
+    }
+
+    .desktop-pet-anchor {
+      position: absolute;
+      left: var(--pet-anchor-x, 50vw);
+      top: var(--pet-anchor-y, calc(50vh + 140px));
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .desktop-pet-ui::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 92%, rgba(255, 167, 196, 0.05), transparent 18%),
+        radial-gradient(circle at 50% 100%, rgba(192, 132, 252, 0.04), transparent 28%);
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-ui::before {
+      opacity: 0.38;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-ui {
+      display: block;
+    }
+
+    .desktop-status-pill {
+      position: absolute;
+      left: calc(50% + 116px);
+      bottom: 136px;
+      max-width: min(240px, calc(100vw - 96px));
+      padding: 10px 14px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(26, 24, 40, 0.76), rgba(22, 18, 34, 0.62));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(22px) saturate(132%);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+      font-size: 12px;
+      line-height: 1.45;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(8px, 6px, 0) scale(0.98);
+      will-change: transform, opacity;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      text-align: left;
+    }
+
+    .desktop-status-pill::after {
+      content: '';
+      position: absolute;
+      left: 18px;
+      bottom: -6px;
+      width: 12px;
+      height: 12px;
+      background: inherit;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      transform: rotate(45deg);
+      border-radius: 2px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-status-pill {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .desktop-status-pill.error {
+      color: #ffb4b4;
+      background: rgba(90, 20, 20, 0.56);
+    }
+
+    .desktop-pet-orb {
+      position: absolute;
+      left: var(--pet-orb-x, 0px);
+      bottom: var(--pet-orb-y, 0px);
+      width: 10px;
+      height: 10px;
+      border: 0;
+      border-radius: 999px;
+      transform: translate3d(0, 50%, 0);
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1), rgba(255, 230, 245, 0.9) 30%, rgba(200, 160, 255, 0.7) 60%, rgba(150, 120, 220, 0.3) 85%, transparent 100%);
+      box-shadow:
+        0 0 8px rgba(255, 255, 255, 0.95),
+        0 0 16px rgba(200, 160, 255, 0.7),
+        0 0 24px rgba(150, 120, 220, 0.4);
+      cursor: pointer;
+      pointer-events: auto;
+      opacity: 0.95;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      animation: desktopPetOrbGlow 2.4s ease-in-out infinite;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+    }
+
+    .desktop-pet-orb:hover {
+      transform: translate3d(0, 50%, 0) scale(1.5);
+      box-shadow:
+        0 0 12px rgba(255, 255, 255, 1),
+        0 0 24px rgba(200, 160, 255, 0.85),
+        0 0 36px rgba(150, 120, 220, 0.6);
+      opacity: 1;
+      animation-play-state: paused;
+    }
+
+    .desktop-pet-orb-core,
+    .desktop-pet-orb-ring {
+      display: none;
+    }
+
+    @keyframes desktopPetOrbGlow {
+      0%,
+      100% {
+        opacity: 0.85;
+        transform: translate3d(0, 50%, 0) scale(1);
+      }
+      50% {
+        opacity: 0.98;
+        transform: translate3d(0, 50%, 0) scale(1.08);
+      }
+    }
+
+    @keyframes desktopPetOrbFloat {
+      0%,
+      100% {
+        transform: translate(0, 50%) scale(1);
+      }
+      50% {
+        transform: translate(0, calc(50% - 2px)) scale(1.02);
+      }
+    }
+
+    .desktop-pet-settings,
+    .desktop-pet-panel {
+      position: absolute;
+      left: var(--pet-card-x, 78px);
+      width: min(332px, calc(100vw - 42px));
+      padding: 12px;
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(30, 24, 42, 0.84), rgba(14, 14, 24, 0.64)),
+        rgba(16, 16, 26, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(24px) saturate(132%);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      will-change: transform, opacity;
+      contain: layout paint;
+    }
+
+    .desktop-pet-settings {
+      bottom: var(--pet-card-bottom, 82px);
+      transform: translate3d(0, 12px, 0) scale(0.985);
+      max-height: min(70vh, 520px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: 8px;
+    }
+
+    .desktop-pet-settings::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .desktop-pet-settings::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .desktop-pet-settings::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+    }
+
+    .desktop-pet-settings::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .desktop-pet-panel {
+      bottom: var(--pet-card-bottom, 82px);
+      transform: translate3d(0, 12px, 0) scale(0.985);
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-settings.open,
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .desktop-pet-settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 4px 0 8px;
+      background: linear-gradient(180deg, rgba(30, 24, 42, 0.96), rgba(30, 24, 42, 0.8));
+      backdrop-filter: blur(16px);
+    }
+
+    .desktop-pet-settings-hint {
+      margin: -2px 0 12px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .desktop-pet-settings-close {
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--fg);
+    }
+
+    .desktop-pet-setting-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+    }
+
+    .desktop-pet-setting-field select,
+    .desktop-pet-setting-field input {
+      width: 100%;
+      box-sizing: border-box;
+      height: 40px;
+      border-radius: 14px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.08);
+      font: inherit;
+    }
+
+    .desktop-pet-setting-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .desktop-pet-setting-grid.single {
+      grid-template-columns: 1fr;
+      margin-top: 8px;
+    }
+
+    .desktop-pet-setting-grid button {
+      min-height: 38px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .desktop-pet-setting-grid button.active,
+    .desktop-pet-settings-close:hover,
+    .desktop-pet-setting-grid button:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .desktop-automation-section {
+      margin: 12px 0;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .desktop-automation-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .desktop-automation-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.84);
+      margin-bottom: 8px;
+    }
+
+    .desktop-automation-toggle input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
+    .desktop-automation-textarea {
+      width: 100%;
+      min-height: 76px;
+      resize: vertical;
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.08);
+      font: inherit;
+      line-height: 1.45;
+    }
+
+    .desktop-automation-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .desktop-automation-log {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 132px;
+      overflow-y: auto;
+      margin-top: 10px;
+      padding-right: 2px;
+    }
+
+    .desktop-automation-log-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.76);
+    }
+
+    .desktop-automation-log-time {
+      flex: 0 0 auto;
+      color: rgba(255, 255, 255, 0.48);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .desktop-automation-log-text {
+      flex: 1 1 auto;
+      line-height: 1.4;
+    }
+
+    .desktop-automation-log-empty {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.48);
+    }
+
+    .desktop-pet-panel-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .desktop-pet-panel-row.compact {
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .desktop-pet-panel-row select,
+    .desktop-pet-panel-row button,
+    .desktop-pet-input,
+    .desktop-pet-send-btn,
+    .desktop-pet-icon-btn {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(18px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .desktop-pet-panel-row select,
+    .desktop-pet-panel-row button {
+      height: 38px;
+      border-radius: 14px;
+      padding: 0 12px;
+    }
+
+    .desktop-pet-panel-row select {
+      flex: 1;
+    }
+
+    .desktop-pet-messages {
+      max-height: 126px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 2px 2px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+      mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+    }
+
+    .desktop-pet-messages .message {
+      max-width: 100%;
+    }
+
+    .desktop-pet-messages .meta {
+      opacity: 0.72;
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+
+    .desktop-pet-messages .bubble {
+      font-size: 12px;
+      line-height: 1.48;
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .desktop-pet-messages .message.user .bubble {
+      background: linear-gradient(135deg, rgba(255, 118, 170, 0.28), rgba(181, 132, 255, 0.24));
+    }
+
+    .desktop-pet-messages .message.assistant .bubble {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.06));
+    }
+
+    .desktop-pet-messages .message.system .bubble {
+      color: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .desktop-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .desktop-quick-actions button {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 7px 12px;
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .desktop-quick-actions button:hover,
+    .desktop-pet-panel-row button:hover,
+    .desktop-pet-icon-btn:hover,
+    .desktop-pet-send-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .desktop-pet-composer {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .desktop-pet-composer-shell {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      padding: 8px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-dock,
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-settings.open,
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-settings.open,
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-panel.open {
+      transform: translateY(0) scale(1);
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-ui-visible .desktop-pet-orb {
+      opacity: 0.22;
+      transform: translate(0, 50%) scale(0.9);
+    }
+
+    .desktop-attachment-preview {
+      margin-bottom: 8px;
+    }
+
+    .desktop-pet-plus-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .desktop-pet-plus-menu {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 8px);
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(24, 24, 34, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+      display: none;
+      flex-direction: row;
+      gap: 8px;
+      z-index: 4;
+    }
+
+    .desktop-pet-plus-menu.open {
+      display: flex;
+    }
+
+    .desktop-pet-plus-menu-item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--fg);
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .desktop-pet-plus-menu-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .desktop-pet-plus-menu-item[disabled] {
+      opacity: 0.42;
+      cursor: default;
+    }
+
+    .desktop-pet-plus-menu-item svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .desktop-screenshot-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      background: rgba(0, 0, 0, 0.25);
+      cursor: crosshair;
+      z-index: 200;
+    }
+
+    .desktop-screenshot-overlay.active {
+      display: block;
+    }
+
+    .desktop-screenshot-selection {
+      position: absolute;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    }
+
+    .desktop-screenshot-dim {
+      position: absolute;
+      top: -22px;
+      left: 0;
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #f0f0f5;
+      white-space: nowrap;
+    }
+
+    .desktop-pet-input-wrap {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .desktop-pet-icon-btn,
+    .desktop-pet-send-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .desktop-pet-icon-btn:active,
+    .desktop-pet-send-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .desktop-pet-input {
+      flex: 1;
+      min-height: 42px;
+      max-height: 120px;
+      resize: none;
+      border-radius: 18px;
+      padding: 10px 14px;
+      color: var(--fg);
+      outline: none;
+      font: inherit;
+      line-height: 1.45;
+    }
+
+    .desktop-pet-input:focus {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.12);
+    }
+
+    .desktop-pet-input::placeholder {
+      color: rgba(255, 255, 255, 0.56);
+    }
+
+    /* Unified pet chat card overrides */
+    body.desktop-shell-enabled.desktop-mode-pet:not(.desktop-panel-open):not(.desktop-settings-open) .desktop-pet-ui::before {
+      opacity: 0;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel,
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-settings {
+      width: min(320px, calc(100vw - 44px));
+      left: var(--pet-card-x, 78px);
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel.expanded {
+      width: min(430px, calc(100vw - 40px));
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      bottom: 74px;
+      padding: 12px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-settings {
+      bottom: 74px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      pointer-events: auto;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel-actions button {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-status-pill {
+      position: relative;
+      left: auto;
+      bottom: auto;
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: none;
+      padding: 2px 4px 2px 0;
+      margin-right: 8px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      opacity: 1;
+      transform: none;
+      text-align: left;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 11px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-status-pill::after {
+      display: none;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-quick-actions {
+      display: none;
+      margin-bottom: 0;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel.expanded .desktop-quick-actions {
+      display: flex;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-messages {
+      min-height: 108px;
+      max-height: 152px;
+      padding: 0 2px 2px;
+      margin-right: -2px;
+      mask-image: none;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel.expanded .desktop-pet-messages {
+      max-height: 248px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-messages .message .bubble {
+      border-radius: 16px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-dock {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      margin-top: 2px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      opacity: 1;
+      pointer-events: auto;
+      overflow: visible;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-attachment-preview {
+      margin-bottom: 6px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-composer-shell {
+      align-items: stretch;
+      width: 100%;
+      min-width: 0;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-icon-btn,
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-input {
+      min-height: 42px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+      flex: 1 1 auto;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-plus-btn {
+      width: 40px;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-panel-open .desktop-pet-orb,
+    body.desktop-shell-enabled.desktop-mode-pet.desktop-settings-open .desktop-pet-orb {
+      opacity: 0.16;
+      transform: translate(0, 50%) scale(0.88);
+    }
+
+    @media (max-width: 720px) {
+
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel,
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-settings {
+        width: calc(100vw - 40px);
+        left: max(12px, min(var(--pet-card-x, 12px), calc(100vw - 40px - 12px)));
+        bottom: 72px;
+      }
+
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel.expanded {
+        width: calc(100vw - 24px);
+      }
+
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-messages {
+        max-height: 132px;
+      }
+
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel.expanded .desktop-pet-messages {
+        max-height: 196px;
+      }
+    }
+
+    .desktop-context-menu {
+      position: fixed;
+      min-width: 180px;
+      max-width: 220px;
+      background: rgba(20, 20, 32, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(18px);
+      padding: 6px;
+      display: none;
+      z-index: 200;
+    }
+
+    .desktop-context-menu.open {
+      display: block;
+    }
+
+    .desktop-context-menu button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--fg);
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .desktop-context-menu button:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .quick-actions-bar {
+      background: transparent;
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .chat-input-area {
+      background: rgba(26, 26, 46, 0.72);
+    }
+
+    body.desktop-shell-enabled.desktop-mode-pet .settings-menu {
+      top: 16px;
+      right: 16px;
+      max-height: calc(100vh - 32px);
+      background: rgba(18, 18, 28, 0.66);
+      backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    @media (max-width: 720px) {
+
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-settings,
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel {
+        width: calc(100vw - 40px);
+        bottom: 72px;
+      }
+
+      body.desktop-shell-enabled.desktop-mode-pet .desktop-pet-panel-actions button {
+        padding: 0 8px;
+      }
+
+      .desktop-pet-panel-row {
+        flex-wrap: wrap;
+      }
+
+      .desktop-pet-panel-row button,
+      .desktop-pet-panel-row select {
+        flex: 1 1 auto;
+      }
+    }
+
+    /* Fix select dropdown styling */
+    .desktop-pet-setting-field select,
+    .desktop-pet-panel-row select {
+      color: #f0f0f5;
+      background-color: rgba(30, 24, 42, 0.92);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      padding: 0 32px 0 12px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f0f0f5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
+    }
+    .desktop-pet-setting-field select:focus,
+    .desktop-pet-panel-row select:focus {
+      border-color: rgba(200, 160, 255, 0.5) !important;
+      box-shadow: 0 0 0 2px rgba(200, 160, 255, 0.15);
+    }
+    .desktop-pet-setting-field select option,
+    .desktop-pet-panel-row select option {
+      color: #f0f0f5;
+      background-color: #1e182a;
+      border-radius: 8px;
+      padding: 8px 12px;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Lunaria</h1>
+    <span id="status">正在加载…</span>
+  </header>
+
+  <main>
+    <!-- 左侧：Live2D 模型区域 -->
+    <section class="stage-wrap" id="stage-wrap">
+      <canvas id="stage"></canvas>
+
+      <div class="desktop-shell" id="desktop-shell">
+        <div class="desktop-floating-controls">
+          <button class="desktop-floating-btn" id="desktop-toggle-mode" title="切换桌宠/普通模式">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path d="M3 5h18v10H3V5zm2 2v6h14V7H5zm0 10h14v2H5v-2z" />
+            </svg>
+          </button>
+          <button class="desktop-floating-btn" id="desktop-toggle-chat" title="展开/收起聊天">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H7l-5 5V6a2 2 0 0 1 2-2zm2 4v2h12V8H6zm0 4v2h8v-2H6z" />
+            </svg>
+          </button>
+          <button class="desktop-floating-btn" id="desktop-voice-btn" title="语音输入（预留）">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V22h2v-3.08A7 7 0 0 0 19 12h-2z" />
+            </svg>
+          </button>
+          <button class="desktop-floating-btn" id="desktop-pin-btn" title="总在最前">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path d="M16 9V4l1-1V2H7v1l1 1v5l-2 2v1h5v8l1 1 1-1v-8h5v-1l-2-2z" />
+            </svg>
+          </button>
+          <button class="desktop-floating-btn" id="desktop-drag-btn" title="拖动窗口">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M13 5.83V2l4 4-4 4V6.17C9.55 6.65 7 9.61 7 13c0 3.87 3.13 7 7 7 3.39 0 6.35-2.55 6.83-6H19c-.46 2.33-2.52 4-5 4-2.76 0-5-2.24-5-5s2.24-5 5-5h-1zM11 18l-4 4-4-4h3v-4h2v4h3z" />
+            </svg>
+          </button>
+          <button class="desktop-floating-btn" id="desktop-settings-btn" title="设置">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.63c-.04.34-.07.67-.07 1 0 .33.03.66.07.97l-2.11 1.63c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.03c.52.4 1.08.73 1.69.98l.38 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1.03c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.63z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="desktop-pet-ui" id="desktop-pet-ui">
+        <div class="desktop-pet-anchor" id="desktop-pet-anchor">
+          <button type="button" class="desktop-pet-orb" id="desktop-pet-orb" aria-label="打开桌宠聊天">
+            <span class="desktop-pet-orb-core"></span>
+            <span class="desktop-pet-orb-ring"></span>
+          </button>
+          <div class="desktop-pet-settings" id="desktop-pet-settings" aria-label="桌宠设置">
+            <div class="desktop-pet-settings-header">
+              <span>桌宠设置</span>
+              <button type="button" class="desktop-pet-settings-close" id="desktop-pet-settings-close">完成</button>
+            </div>
+            <label class="desktop-pet-setting-field">
+              <span>模型</span>
+              <select id="desktop-model-select"></select>
+            </label>
+            <div class="desktop-pet-setting-grid single">
+              <button type="button" id="desktop-pet-pin-toggle">总在最前</button>
+            </div>
+            <label class="desktop-pet-setting-field">
+              <span>移开后隐藏（秒）</span>
+              <input type="number" id="desktop-auto-hide-seconds-input" min="1" max="60" step="1" value="10" />
+            </label>
+            <div class="desktop-automation-section">
+              <div class="desktop-automation-section-title">自动化控制器</div>
+              <label class="desktop-automation-toggle">
+                <span>启用自动化</span>
+                <input type="checkbox" id="desktop-automation-enabled" />
+              </label>
+              <label class="desktop-automation-toggle">
+                <span>仅桌宠模式运行</span>
+                <input type="checkbox" id="desktop-automation-pet-only" checked />
+              </label>
+            </div>
+            <div class="desktop-automation-section">
+              <div class="desktop-automation-section-title">主动搭话</div>
+              <label class="desktop-automation-toggle">
+                <span>启用</span>
+                <input type="checkbox" id="desktop-automation-proactive-enabled" />
+              </label>
+              <label class="desktop-pet-setting-field">
+                <span>间隔（分钟）</span>
+                <input type="number" id="desktop-automation-proactive-interval" min="1" max="1440" step="1" value="10" />
+              </label>
+              <label class="desktop-pet-setting-field">
+                <span>提示词</span>
+                <textarea id="desktop-automation-proactive-prompt" class="desktop-automation-textarea"></textarea>
+              </label>
+              <div class="desktop-automation-actions">
+                <button type="button" id="desktop-automation-proactive-run-btn">立即测试</button>
+              </div>
+            </div>
+            <div class="desktop-automation-section">
+              <div class="desktop-automation-section-title">截图观察</div>
+              <label class="desktop-automation-toggle">
+                <span>启用</span>
+                <input type="checkbox" id="desktop-automation-screenshot-enabled" />
+              </label>
+              <label class="desktop-pet-setting-field">
+                <span>间隔（分钟）</span>
+                <input type="number" id="desktop-automation-screenshot-interval" min="1" max="1440" step="1" value="30" />
+              </label>
+              <label class="desktop-pet-setting-field">
+                <span>提示词</span>
+                <textarea id="desktop-automation-screenshot-prompt" class="desktop-automation-textarea"></textarea>
+              </label>
+              <div class="desktop-automation-actions">
+                <button type="button" id="desktop-automation-screenshot-run-btn">立即截图测试</button>
+              </div>
+            </div>
+            <div class="desktop-automation-section">
+              <div class="desktop-automation-section-title">AI 动作：音乐</div>
+              <label class="desktop-automation-toggle">
+                <span>允许 AI 控制音乐</span>
+                <input type="checkbox" id="desktop-automation-music-actions-enabled" checked />
+              </label>
+              <label class="desktop-pet-setting-field">
+                <span>默认音乐 URL</span>
+                <input type="text" id="desktop-automation-music-url" placeholder="https://.../music.mp3 或本地可访问 URL" />
+              </label>
+              <label class="desktop-pet-setting-field">
+                <span>默认音量（0-1）</span>
+                <input type="number" id="desktop-automation-music-volume" min="0" max="1" step="0.05" value="0.35" />
+              </label>
+              <label class="desktop-automation-toggle">
+                <span>循环播放</span>
+                <input type="checkbox" id="desktop-automation-music-loop" />
+              </label>
+              <div class="desktop-automation-actions">
+                <button type="button" id="desktop-automation-stop-music-btn">停止音乐</button>
+              </div>
+              <div class="desktop-automation-log" id="desktop-automation-log"></div>
+            </div>
+            <div class="desktop-pet-setting-grid single">
+              <button type="button" id="desktop-copy-debug-btn">复制调试信息</button>
+            </div>
+            <div class="desktop-pet-setting-grid single">
+              <button type="button" id="desktop-switch-window-btn">切到窗口模式</button>
+            </div>
+          </div>
+          <div class="desktop-pet-panel" id="desktop-pet-panel" aria-label="桌宠聊天面板">
+            <div class="desktop-pet-panel-top">
+              <div class="desktop-status-pill" id="desktop-status-pill">正在加载…</div>
+              <div class="desktop-pet-panel-actions">
+                <button type="button" id="desktop-toggle-hide-btn" title="隐藏卡片">隐藏</button>
+                <button type="button" id="desktop-open-settings-btn">设置</button>
+                <button type="button" id="desktop-toggle-expand-btn">展开</button>
+              </div>
+            </div>
+          <div class="desktop-quick-actions" id="desktop-quick-actions"></div>
+          <div class="desktop-pet-messages" id="desktop-messages"></div>
+            <div class="desktop-pet-composer" id="desktop-pet-dock">
+              <div class="desktop-attachment-row">
+                <div id="desktop-attachment-preview" class="attachment-preview desktop-attachment-preview"></div>
+                <div id="desktop-camera-preview-container" class="camera-preview-container desktop-camera-preview-container" style="display: none;">
+                  <video id="desktop-camera-video" autoplay playsinline muted></video>
+                  <canvas id="desktop-camera-canvas" style="display: none;"></canvas>
+                  <button id="desktop-camera-close-btn" class="camera-close-btn" title="关闭摄像头">
+                    <svg class="icon icon-small" viewBox="0 0 24 24">
+                      <path
+                        d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                  </button>
+                  <div class="desktop-camera-preview-actions">
+                    <button id="desktop-camera-capture-btn" class="desktop-camera-capture-btn" type="button">拍照</button>
+                  </div>
+                </div>
+              </div>
+              <div class="desktop-pet-composer-shell">
+                <div class="desktop-pet-plus-wrap">
+                  <button type="button" class="desktop-pet-icon-btn desktop-pet-plus-btn" id="desktop-plus-btn"
+                    title="更多操作">+</button>
+                  <div class="desktop-pet-plus-menu" id="desktop-plus-menu">
+                    <button type="button" class="desktop-pet-plus-menu-item" id="desktop-new-session-btn" title="新建会话" aria-label="新建会话">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                      </svg>
+                      <span class="visually-hidden">新建会话</span>
+                    </button>
+                    <label class="desktop-pet-plus-menu-item" title="上传图片" aria-label="上传图片">
+                      <input type="file" id="desktop-image-upload-input" accept="image/*" multiple hidden />
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <path d="M7 14l3-3 3 3 3-4 4 6H6z" fill="currentColor" opacity="0.6"/>
+                        <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
+                      </svg>
+                      <span class="visually-hidden">上传图片</span>
+                    </label>
+                    <button type="button" class="desktop-pet-plus-menu-item" id="desktop-plus-expressions-btn" title="动作/表情" aria-label="动作/表情">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12zm4-2h8M8 16c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <span class="visually-hidden">动作/表情</span>
+                    </button>
+                    <button type="button" class="desktop-pet-plus-menu-item" id="desktop-plus-camera-btn" title="摄像头" aria-label="摄像头">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 7h4l2-2h4l2 2h4v12H4z" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                      <span class="visually-hidden">摄像头</span>
+                    </button>
+                    <button type="button" class="desktop-pet-plus-menu-item" id="desktop-plus-screenshot-btn" title="截图" aria-label="截图">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="8" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="16" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <span class="visually-hidden">截图</span>
+                    </button>
+                    <button type="button" class="desktop-pet-plus-menu-item" disabled title="语音" aria-label="语音">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zm-5 9a5 5 0 0 0 10 0M12 19v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <span class="visually-hidden">语音</span>
+                    </button>
+                  </div>
+                  <div class="desktop-expressions-panel" id="desktop-expressions-panel">
+                    <div class="expressions-section">
+                      <div class="expressions-label">动作</div>
+                      <div class="expressions-grid" id="desktop-debug-motions"></div>
+                    </div>
+                    <div class="expressions-section">
+                      <div class="expressions-label">表情</div>
+                      <div class="expressions-grid" id="desktop-debug-expressions"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="desktop-pet-input-wrap">
+                  <textarea id="desktop-chat-input" class="desktop-pet-input" placeholder="和桌宠说点什么…"
+                    rows="1"></textarea>
+                </div>
+                <button id="desktop-send-btn" type="button" class="desktop-pet-send-btn" title="发送">
+                  <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右侧：聊天区域 -->
+    <aside class="chat-panel" id="chat-panel">
+      <!-- Drag overlay -->
+      <div class="drag-overlay" id="drag-overlay">
+        <span class="drag-overlay-text">松开以上传图片</span>
+      </div>
+
+      <!-- Chat Header -->
+      <div class="chat-header" id="chat-header">
+        <div class="chat-header-left">
+          <span class="chat-header-title">聊天</span>
+          <button class="icon-btn" id="btn-sessions" title="历史会话">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chat-header-actions">
+          <button class="icon-btn" id="btn-settings" title="设置">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.63c-.04.34-.07.67-.07 1 0 .33.03.66.07.97l-2.11 1.63c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.03c.52.4 1.08.73 1.69.98l.38 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1.03c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.63z" />
+            </svg>
+          </button>
+          <button class="icon-btn" id="window-close-btn" title="关闭窗口">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sessions Panel -->
+      <div class="sessions-panel" id="sessions-panel">
+        <div class="sessions-panel-header">
+          <span>历史会话</span>
+          <button type="button" class="sessions-panel-close" id="sessions-panel-close">×</button>
+        </div>
+        <div class="sessions-list" id="sessions-list"></div>
+      </div>
+
+      <!-- Messages -->
+      <div id="messages" class="messages"></div>
+
+      <!-- Quick Actions - 在输入框上方 -->
+      <div class="quick-actions-bar">
+    <div class="quick-actions-header">
+      <span class="quick-actions-title">快捷表情</span>
+    </div>
+        <div class="quick-actions" id="quick-actions"></div>
+        <div class="expressions-panel" id="expressions-panel">
+          <div class="expressions-section">
+            <div class="expressions-label">动作</div>
+            <div class="expressions-grid" id="debug-motions"></div>
+          </div>
+          <div class="expressions-section">
+            <div class="expressions-label">表情</div>
+            <div class="expressions-grid" id="debug-expressions"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-area">
+        <!-- Camera Preview -->
+        <div id="camera-preview-container" class="camera-preview-container" style="display: none;">
+          <video id="camera-video" autoplay playsinline muted></video>
+          <canvas id="camera-canvas" style="display: none;"></canvas>
+          <button id="camera-close-btn" class="camera-close-btn">
+            <svg class="icon icon-small" viewBox="0 0 24 24">
+              <path
+                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Attachments -->
+        <div id="attachment-preview" class="attachment-preview"></div>
+
+        <!-- Toolbar -->
+        <div class="chat-toolbar">
+          <label class="toolbar-btn" title="上传图片">
+            <input type="file" id="image-upload-input" accept="image/*" multiple hidden />
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M16.5 6v11.5c0 2.21-1.8 4.04-4 4.04h-11c-2.2 0-4-1.83-4-4.04V6c0-2.21 1.8-4.04 4-4.04h11c2.2 0 4 1.83 4 4.04zM4.5 6v11.5c0 1.08.92 1.96 2 1.96h11c1.08 0 2-.88 2-1.96V6c0-1.08-.92-1.96-2-1.96h-11c-1.08 0-2 .88-2 1.96zm3 1.96c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm10.5 8.54l-2.25-3.75-2.03 2.72-1.72-2.72-3 5.25h9zM21 4v12h-2V4c0-1.1-.9-2-2-2H6v2h13v12h2V4z" />
+            </svg>
+          </label>
+          <button class="toolbar-btn" id="camera-btn" title="摄像头">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M9.4 10.5l4.77-8.26C13.47 2.09 12.75 2 12 2c-2.4 0-4.6.85-6.32 2.25l3.66 6.35.06-.1zM21.54 9c-.92-2.92-3.15-5.26-6-6.34L11.88 9h9.66zm.26 2h-8.49l.29.5 4.76 8.25C21 16.97 22 14.61 22 12c0-.69-.07-1.35-.2-2zM8.54 12l-3.9-6.75C3.01 7.03 2 9.39 2 12c0 .69.07 1.35.2 2h8.49l-2.15-3.73-.09-.16zm-3.86 4.5l3.66 6.35c1.72 1.4 3.92 2.25 6.32 2.25.75 0 1.47-.09 2.17-.26l-4.77-8.26-3.66 6.35-.72-1.43z" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-wrap">
+          <textarea id="chat-input" placeholder="输入消息…" rows="1"></textarea>
+          <button id="send-btn" class="send-btn" title="发送">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Settings Overlay -->
+  <div class="settings-overlay" id="settings-overlay"></div>
+
+  <!-- Settings Menu -->
+  <div class="settings-menu" id="settings-menu">
+    <div class="settings-header">
+      <span class="settings-title">设置</span>
+      <button class="settings-close" id="settings-close" title="关闭">
+        <svg class="icon icon-small" viewBox="0 0 24 24">
+          <path
+            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Model Section -->
+    <div class="settings-section">
+      <div class="settings-section-title">模型</div>
+      <select id="settings-model-select"></select>
+    </div>
+
+    <!-- Provider Section -->
+    <div class="settings-section">
+      <div class="settings-section-title">AI 服务</div>
+      <select id="provider-select"></select>
+      <div class="config-grid" id="provider-fields" style="margin-top: 8px;"></div>
+    </div>
+
+    <!-- Sessions Section (Web/Window only) -->
+    <div class="settings-section" id="sessions-section">
+      <div class="settings-section-title">历史会话</div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <select id="sessions-select" style="flex: 1;"></select>
+        <button id="sessions-new-btn" class="settings-close" type="button" title="新建会话">＋</button>
+      </div>
+    </div>
+
+    <!-- TTS Section -->
+    <div class="settings-section">
+      <div class="settings-section-title">语音</div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+        <label class="pill"><input id="tts-enabled-input" type="checkbox" /> 启用语音</label>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
+        <label style="width: 72px; color: var(--muted); font-size: 12px;">对话</label>
+        <select id="tts-provider-select" style="flex: 1;"></select>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
+        <label style="width: 72px; color: var(--muted); font-size: 12px;">主动推送</label>
+        <select id="push-tts-provider-select" style="flex: 1;"></select>
+      </div>
+    </div>
+
+    <!-- Desktop Section -->
+    <div class="settings-section">
+      <div class="settings-section-title">桌面模式</div>
+      <div class="field wide">
+        <label>Lunaria Backend</label>
+        <input id="backend-base-url-input" type="text" placeholder="http://127.0.0.1:18080" />
+      </div>
+      <div class="field wide">
+        <label>界面模式</label>
+        <select id="desktop-mode-select">
+          <option value="normal">普通聊天窗口</option>
+          <option value="pet">桌宠模式</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+        <label class="pill"><input id="desktop-always-on-top-input" type="checkbox" /> 总在最前</label>
+      </div>
+    </div>
+
+    <!-- Appearance Section -->
+    <div class="settings-section">
+      <div class="settings-section-title">外观</div>
+      <div class="slider-group">
+        <label><span>缩放</span><output id="scale-value">1.00x</output></label>
+        <input id="scale-range" type="range" min="0.4" max="2.4" step="0.01" value="1" />
+      </div>
+      <div class="slider-group">
+        <label><span>水平位置</span><output id="x-value">0%</output></label>
+        <input id="x-range" type="range" min="-40" max="40" step="1" value="0" />
+      </div>
+      <div class="slider-group">
+        <label><span>垂直位置</span><output id="y-value">0%</output></label>
+        <input id="y-range" type="range" min="-40" max="40" step="1" value="0" />
+      </div>
+      <div style="margin-top: 10px; display: flex; gap: 8px;">
+        <button id="btn-reset-layout" type="button" class="toggle-btn">重置位置</button>
+      </div>
+      <label class="file-input-label">
+        <input id="bg-image-input" type="file" accept="image/*" />
+        <svg class="icon icon-small" viewBox="0 0 24 24">
+          <path
+            d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+        </svg>
+        <span>选择背景图片</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="desktop-context-menu" id="desktop-context-menu">
+    <div id="desktop-context-menu-items"></div>
+  </div>
+
+  <div class="desktop-screenshot-overlay" id="desktop-screenshot-overlay">
+    <div class="desktop-screenshot-selection" id="desktop-screenshot-selection" style="display: none;">
+      <div class="desktop-screenshot-dim" id="desktop-screenshot-dim">0 × 0</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js"></script>
+  <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,33 @@
+{
+  "id": "live2d",
+  "name": "Live2D Bridge",
+  "description": "OpenClaw channel bridge for the Live2D Python backend.",
+  "version": "0.1.0",
+  "channels": ["live2d"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": false,
+        "description": "Enable Live2D channel bridge"
+      },
+      "websocketHost": {
+        "type": "string",
+        "default": "127.0.0.1",
+        "description": "Host to bind the bridge websocket server"
+      },
+      "websocketPort": {
+        "type": "number",
+        "default": 18790,
+        "description": "Port to bind the bridge websocket server"
+      }
+    }
+  },
+  "uiHints": {
+    "enabled": { "label": "启用 Live2D channel bridge" },
+    "websocketHost": { "label": "WebSocket 主机", "placeholder": "127.0.0.1" },
+    "websocketPort": { "label": "WebSocket 端口", "placeholder": "18790" }
+  }
+}

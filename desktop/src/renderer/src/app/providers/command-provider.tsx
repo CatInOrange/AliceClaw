@@ -27,6 +27,11 @@ import { AiStateEnum, useVoiceStore } from "@/domains/voice/store";
 import { createTempFileComposerAttachment } from "@/runtime/composer-attachment-utils.ts";
 import { shouldRunAutomationRule } from "@/runtime/automation-utils.ts";
 import { resolveAssistantDisplayName } from "@/runtime/assistant-display-utils.ts";
+import {
+  beginBackendConnectionSession,
+  shouldApplyBackendConnectionUpdate,
+  shouldPreferConfiguredBackendUrl,
+} from "@/runtime/backend-connection-utils.ts";
 import { getConnectionStateAfterChatError } from "@/runtime/chat-runtime-utils.ts";
 import { resolveFocusCenterConfig } from "@/runtime/focus-center-utils.ts";
 import { getManifestHydrationState } from "@/runtime/manifest-hydration-utils.ts";
@@ -299,6 +304,7 @@ export function RendererCommandProvider({
   const eventsCleanupRef = useRef<(() => void) | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
   const reconnectAttemptRef = useRef(0);
+  const backendConnectionStoreRef = useRef({ activeSessionId: 0 });
   const playbackQueueRef = useRef(Promise.resolve());
   const playbackVersionRef = useRef(0);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -335,6 +341,48 @@ export function RendererCommandProvider({
   useEffect(() => {
     currentSessionRef.current = currentSessionId;
   }, [currentSessionId]);
+
+  useEffect(() => {
+    let disposed = false;
+
+    const hydrateConfiguredBackendUrl = async () => {
+      try {
+        const configuredBackendUrl = String(
+          await window.api?.getConfiguredBackendUrl?.() || "",
+        ).trim();
+        if (disposed) {
+          return;
+        }
+
+        const currentBackendUrl = useAppStore.getState().backendUrl;
+        if (!shouldPreferConfiguredBackendUrl({
+          currentUrl: currentBackendUrl,
+          configuredUrl: configuredBackendUrl,
+        })) {
+          return;
+        }
+
+        useAppStore.getState().setBackendUrl(configuredBackendUrl);
+      } catch (error) {
+        console.warn("Failed to hydrate configured backend URL:", error);
+      }
+    };
+
+    void hydrateConfiguredBackendUrl();
+
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  const createConnectionUpdateGuard = useCallback(
+    (sessionId: number, isDisposed: () => boolean) => () => shouldApplyBackendConnectionUpdate({
+      sessionId,
+      store: backendConnectionStoreRef.current,
+      isDisposed: isDisposed(),
+    }),
+    [],
+  );
 
   const stopCurrentAudio = useCallback(() => {
     audioManager.stopCurrentAudioAndLipSync();
@@ -731,21 +779,45 @@ export function RendererCommandProvider({
     }
   }, []);
 
-  const loadSession = useCallback(async (sessionId: string) => {
+  const loadSession = useCallback(async (
+    sessionId: string,
+    options?: { shouldApply?: () => boolean },
+  ) => {
     if (!sessionId) {
       return;
     }
     await selectSession(normalizedBackendUrl, sessionId);
+    if (options?.shouldApply && !options.shouldApply()) {
+      return;
+    }
     const messages = await fetchMessages(normalizedBackendUrl, sessionId);
+    if (options?.shouldApply && !options.shouldApply()) {
+      return;
+    }
     useAppStore.getState().setCurrentSessionId(sessionId);
     useAppStore.getState().setMessagesForSession(sessionId, messages);
   }, [normalizedBackendUrl]);
 
-  const reconnect = useCallback(async () => {
+  const reconnect = useCallback(async (
+    sessionId?: number,
+    isDisposed: () => boolean = () => false,
+  ) => {
+    const connectionSessionId = typeof sessionId === "number"
+      ? sessionId
+      : beginBackendConnectionSession(backendConnectionStoreRef.current);
+    const shouldApply = createConnectionUpdateGuard(connectionSessionId, isDisposed);
+
+    if (!shouldApply()) {
+      return;
+    }
+
     setAiState(AiStateEnum.LOADING);
     useAppStore.getState().setConnectionState("connecting");
     try {
       const nextManifest = await fetchManifest(normalizedBackendUrl);
+      if (!shouldApply()) {
+        return;
+      }
       const nextProviderFieldState = resolveProviderFieldState({
         manifest: nextManifest,
         previousValues: useAppStore.getState().providerFieldValues,
@@ -756,9 +828,18 @@ export function RendererCommandProvider({
       useAppStore.getState().hydrateManifest(nextManifest);
 
       let sessionsPayload = await fetchSessions(normalizedBackendUrl);
+      if (!shouldApply()) {
+        return;
+      }
       if (!(sessionsPayload.sessions || []).length) {
         await createSession(normalizedBackendUrl);
+        if (!shouldApply()) {
+          return;
+        }
         sessionsPayload = await fetchSessions(normalizedBackendUrl);
+        if (!shouldApply()) {
+          return;
+        }
       }
 
       useAppStore.getState().setSessions(sessionsPayload.sessions || []);
@@ -768,13 +849,23 @@ export function RendererCommandProvider({
         : sessionsPayload.currentId || sessionsPayload.sessions?.[0]?.id || null;
 
       if (targetSessionId) {
-        await loadSession(targetSessionId);
+        await loadSession(targetSessionId, { shouldApply });
+      }
+
+      if (!shouldApply()) {
+        return;
       }
 
       await refreshPlugins();
+      if (!shouldApply()) {
+        return;
+      }
       useAppStore.getState().setConnectionState("open");
       setAiState(AiStateEnum.IDLE);
     } catch (error) {
+      if (!shouldApply()) {
+        return;
+      }
       useAppStore.getState().setConnectionState("error");
       toaster.create({
         title: `连接后端失败: ${error}`,
@@ -782,9 +873,17 @@ export function RendererCommandProvider({
         duration: 3200,
       });
     }
-  }, [loadSession, normalizedBackendUrl, refreshPlugins, setAiState]);
+  }, [createConnectionUpdateGuard, loadSession, normalizedBackendUrl, refreshPlugins, setAiState]);
 
-  const startEventsStream = useCallback(() => {
+  const startEventsStream = useCallback((
+    sessionId?: number,
+    isDisposed: () => boolean = () => false,
+  ) => {
+    const connectionSessionId = typeof sessionId === "number"
+      ? sessionId
+      : beginBackendConnectionSession(backendConnectionStoreRef.current);
+    const shouldApply = createConnectionUpdateGuard(connectionSessionId, isDisposed);
+
     if (eventsCleanupRef.current) {
       eventsCleanupRef.current();
       eventsCleanupRef.current = null;
@@ -793,10 +892,16 @@ export function RendererCommandProvider({
     eventsCleanupRef.current = openEventsStream(normalizedBackendUrl, {
       since: useAppStore.getState().lastEventSeq,
       onOpen: () => {
+        if (!shouldApply()) {
+          return;
+        }
         reconnectAttemptRef.current = 0;
         useAppStore.getState().setConnectionState("open");
       },
       onError: () => {
+        if (!shouldApply()) {
+          return;
+        }
         useAppStore.getState().setConnectionState("error");
         if (reconnectTimerRef.current) {
           window.clearTimeout(reconnectTimerRef.current);
@@ -804,10 +909,16 @@ export function RendererCommandProvider({
         const delay = Math.min(15000, 1000 * 2 ** reconnectAttemptRef.current);
         reconnectAttemptRef.current += 1;
         reconnectTimerRef.current = window.setTimeout(() => {
-          startEventsStream();
+          if (!shouldApply()) {
+            return;
+          }
+          startEventsStream(connectionSessionId, isDisposed);
         }, delay);
       },
       onEvent: async (event) => {
+        if (!shouldApply()) {
+          return;
+        }
         useAppStore.getState().setLastEventSeq(Number(event.seq || 0));
         if (event.type !== "message.created") {
           return;
@@ -833,13 +944,16 @@ export function RendererCommandProvider({
 
         try {
           const sessionsPayload = await fetchSessions(normalizedBackendUrl);
+          if (!shouldApply()) {
+            return;
+          }
           useAppStore.getState().setSessions(sessionsPayload.sessions || []);
         } catch (error) {
           console.warn("Failed to refresh sessions after realtime message:", error);
         }
       },
     });
-  }, [enqueueSpeech, normalizedBackendUrl]);
+  }, [createConnectionUpdateGuard, enqueueSpeech, normalizedBackendUrl]);
 
   const createNewSession = useCallback(async () => {
     const created = await createSession(normalizedBackendUrl);
@@ -1140,9 +1254,13 @@ export function RendererCommandProvider({
   }, [sendPayload]);
 
   useEffect(() => {
-    void reconnect();
-    startEventsStream();
+    let disposed = false;
+    const connectionSessionId = beginBackendConnectionSession(backendConnectionStoreRef.current);
+
+    void reconnect(connectionSessionId, () => disposed);
+    startEventsStream(connectionSessionId, () => disposed);
     return () => {
+      disposed = true;
       currentAbortRef.current?.abort();
       playbackVersionRef.current = createNextPlaybackVersion(playbackVersionRef.current);
       playbackQueueRef.current = Promise.resolve();
@@ -1154,6 +1272,7 @@ export function RendererCommandProvider({
       }
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
       }
     };
   }, [reconnect, startEventsStream, stopCurrentAudio, stopMusic]);

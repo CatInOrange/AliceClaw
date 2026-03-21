@@ -1,5 +1,5 @@
 import { Box, Button, HStack, Stack, Text, Textarea } from "@chakra-ui/react";
-import { CSSProperties, useRef } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMode } from "@/context/mode-context";
 import { useAppStore } from "@/domains/renderer-store";
@@ -13,6 +13,7 @@ import { getLunariaScrollbarStyles } from "@/runtime/chat-shell-utils.ts";
 import { resolveFocusCenterConfig } from "@/runtime/focus-center-utils.ts";
 import {
   normalizeSupportedLanguage,
+  resolveBackendUrlCommit,
   resolveProviderFieldLabel,
   resolveProviderFieldPlaceholder,
 } from "@/runtime/settings-panel-utils.ts";
@@ -124,6 +125,7 @@ export function SettingsPanel({
   const setFocusCenterForModel = useAppStore((state) => state.setFocusCenterForModel);
   const pluginCount = useAppStore((state) => state.plugins.length);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [backendUrlDraft, setBackendUrlDraft] = useState(backendUrl);
   const modelId = manifest?.selectedModelId || manifest?.model.id || "";
   const focusCenter = resolveFocusCenterConfig({
     manifest,
@@ -131,6 +133,21 @@ export function SettingsPanel({
     modelId,
   });
   const currentLanguage = normalizeSupportedLanguage(i18n.resolvedLanguage || i18n.language);
+  const backendUrlCommit = resolveBackendUrlCommit({
+    draftUrl: backendUrlDraft,
+    currentUrl: backendUrl,
+  });
+
+  useEffect(() => {
+    setBackendUrlDraft(backendUrl);
+  }, [backendUrl]);
+
+  function commitBackendUrlDraft() {
+    setBackendUrlDraft(backendUrlCommit.nextUrl);
+    if (backendUrlCommit.shouldStore) {
+      setBackendUrl(backendUrlCommit.nextUrl);
+    }
+  }
 
   return (
     <Stack
@@ -171,12 +188,35 @@ export function SettingsPanel({
         </select>
 
         <FieldLabel>{t("settings.fields.backendUrl")}</FieldLabel>
-        <input
-          value={backendUrl}
-          onChange={(event) => setBackendUrl(event.target.value)}
-          placeholder="http://127.0.0.1:18080"
-          style={sectionFieldStyle()}
-        />
+        <HStack align="stretch">
+          <input
+            value={backendUrlDraft}
+            onChange={(event) => setBackendUrlDraft(event.target.value)}
+            onBlur={commitBackendUrlDraft}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") {
+                return;
+              }
+              event.preventDefault();
+              commitBackendUrlDraft();
+              event.currentTarget.blur();
+            }}
+            placeholder="http://127.0.0.1:18080"
+            style={{
+              ...sectionFieldStyle(),
+              flex: 1,
+            }}
+          />
+          <Button
+            size="sm"
+            alignSelf="stretch"
+            {...lunariaSecondaryButtonStyles}
+            disabled={!backendUrlCommit.shouldStore && backendUrlDraft === backendUrlCommit.nextUrl}
+            onClick={commitBackendUrlDraft}
+          >
+            {t("common.save")}
+          </Button>
+        </HStack>
       </SettingsSection>
 
       <SettingsSection title={t("settings.sections.provider")}>

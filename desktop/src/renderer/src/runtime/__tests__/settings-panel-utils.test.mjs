@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   normalizeSupportedLanguage,
+  resolveBackendUrlCommit,
   resolveProviderFieldLabel,
   resolveProviderFieldPlaceholder,
 } from "../settings-panel-utils.ts";
@@ -37,5 +38,44 @@ test("resolveProviderFieldPlaceholder prefers explicit placeholder and otherwise
   assert.equal(
     resolveProviderFieldPlaceholder({ key: "baseUrl" }),
     "Base Url",
+  );
+});
+
+test("resolveBackendUrlCommit ignores blank input when the current URL already matches the default backend", () => {
+  assert.deepEqual(
+    resolveBackendUrlCommit({
+      draftUrl: "   ",
+      currentUrl: "http://127.0.0.1:18080",
+    }),
+    {
+      nextUrl: "http://127.0.0.1:18080",
+      shouldStore: false,
+    },
+  );
+});
+
+test("resolveBackendUrlCommit canonicalizes equivalent backend URLs without forcing a reconnecting change", () => {
+  assert.deepEqual(
+    resolveBackendUrlCommit({
+      draftUrl: "lunaria.example.com/api/",
+      currentUrl: "http://lunaria.example.com/api",
+    }),
+    {
+      nextUrl: "http://lunaria.example.com/api",
+      shouldStore: false,
+    },
+  );
+});
+
+test("resolveBackendUrlCommit applies a new backend target after trimming and normalization", () => {
+  assert.deepEqual(
+    resolveBackendUrlCommit({
+      draftUrl: "  https://next.example.com/base/  ",
+      currentUrl: "http://127.0.0.1:18080",
+    }),
+    {
+      nextUrl: "https://next.example.com/base",
+      shouldStore: true,
+    },
   );
 });

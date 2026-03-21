@@ -32,5 +32,6 @@ interface Window {
     onForceIgnoreMouseChanged?: (callback: (isForced: boolean) => void) => () => void
     onPetOverlayBoundsChanged?: (callback: () => void) => () => void
     listPlugins?: () => Promise<any>
+    getConfiguredBackendUrl?: () => Promise<string | null>
   }
 }

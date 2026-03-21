@@ -1,4 +1,7 @@
+import { normalizeBaseUrl } from "../platform/backend/openclaw-api.ts";
+
 const SUPPORTED_LANGUAGES = new Set(["en", "zh"]);
+const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:18080";
 
 function splitFieldKey(key) {
   return String(key || "")
@@ -47,4 +50,24 @@ export function resolveProviderFieldPlaceholder(field) {
   }
 
   return resolveProviderFieldLabel(field);
+}
+
+export function resolveBackendUrlCommit({
+  draftUrl,
+  currentUrl,
+  defaultUrl = DEFAULT_BACKEND_BASE_URL,
+}: {
+  draftUrl?: string;
+  currentUrl?: string;
+  defaultUrl?: string;
+} = {}) {
+  const normalizedDraft = String(draftUrl || "").trim();
+  const nextUrl = normalizedDraft
+    ? normalizeBaseUrl(normalizedDraft)
+    : defaultUrl;
+
+  return {
+    nextUrl,
+    shouldStore: nextUrl !== String(currentUrl || ""),
+  };
 }

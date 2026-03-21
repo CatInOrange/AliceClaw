@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { getProviderOverridesPayload } from "../provider-overrides.mjs";
+import { getProviderOverridesPayload } from "../provider-overrides.ts";
 
 test("getProviderOverridesPayload flattens known provider fields onto chat payload root", () => {
   const provider = {

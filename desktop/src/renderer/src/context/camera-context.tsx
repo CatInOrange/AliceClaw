@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toaster } from '@/components/ui/toaster';
+import { toaster } from '@/shared/ui/toaster';
 
 /**
  * Camera configuration interface

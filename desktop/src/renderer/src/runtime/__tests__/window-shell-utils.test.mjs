@@ -7,7 +7,7 @@ import {
   getNextWindowSidebarPanel,
   shouldResizeWindowLive2DForSidebar,
   shouldShowWindowSidebarSection,
-} from "../window-shell-utils.mjs";
+} from "../window-shell-utils.ts";
 
 test("getNextWindowSidebarPanel keeps the window sidebar closed by default", () => {
   assert.equal(getNextWindowSidebarPanel(null, null), null);

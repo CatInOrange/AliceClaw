@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { deleteGlProgramIfPresent, releaseIfPresent } from "../live2d-disposal-utils.mjs";
+import { deleteGlProgramIfPresent, releaseIfPresent } from "../live2d-disposal-utils.ts";
 
 test("releaseIfPresent ignores nullish resources", () => {
   assert.doesNotThrow(() => {

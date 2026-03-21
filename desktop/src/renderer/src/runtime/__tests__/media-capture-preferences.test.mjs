@@ -4,7 +4,7 @@ import {
   DEFAULT_IMAGE_COMPRESSION_QUALITY,
   DEFAULT_IMAGE_MAX_WIDTH,
   parseMediaCaptureNumber,
-} from "../media-capture-preferences.mjs";
+} from "../media-capture-preferences.ts";
 
 test("parseMediaCaptureNumber keeps valid numeric values inside bounds", () => {
   assert.equal(

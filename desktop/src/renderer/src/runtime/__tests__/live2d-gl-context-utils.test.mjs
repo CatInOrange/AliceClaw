@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   canInitializeLive2DDelegate,
   resolveLive2DGlContext,
-} from "../live2d-gl-context-utils.mjs";
+} from "../live2d-gl-context-utils.ts";
 
 test("resolveLive2DGlContext prefers webgl2 when available", () => {
   const calls = [];

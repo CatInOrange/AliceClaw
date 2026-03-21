@@ -7,7 +7,7 @@ import {
   hasMeaningfulSelection,
   selectionCoversBounds,
   toPositiveRect,
-} from "../screenshot-utils.mjs";
+} from "../screenshot-utils.ts";
 
 test("toPositiveRect normalizes drag direction", () => {
   assert.deepEqual(

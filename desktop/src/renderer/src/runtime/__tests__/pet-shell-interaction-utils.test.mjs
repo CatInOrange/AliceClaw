@@ -6,7 +6,7 @@ import {
   shouldUpdatePetAnchor,
   resolvePetAnchorUpdate,
   resolvePetShellHoverState,
-} from "../pet-shell-interaction-utils.mjs";
+} from "../pet-shell-interaction-utils.ts";
 
 test("resolvePetShellHoverState clears hover when the pet surface is hidden", () => {
   assert.equal(

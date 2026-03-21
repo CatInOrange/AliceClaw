@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resolveProviderFieldState } from "../provider-field-state.mjs";
+import { resolveProviderFieldState } from "../provider-field-state.ts";
 
 function buildManifest(fieldsByProvider) {
   return {

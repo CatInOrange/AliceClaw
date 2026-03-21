@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { resolveStorageValue } from '@/local-storage-utils.mjs';
+import { resolveStorageValue } from '@/local-storage-utils.ts';
 
 export function useLocalStorage<T>(
   key: string,

@@ -1,8 +1,12 @@
 import { CubismFramework } from "@framework/live2dcubismframework";
 import * as LAppDefine from "../../WebSDK/src/lappdefine";
 import { LAppDelegate } from "../../WebSDK/src/lappdelegate";
-import { applyLive2DFocus } from "@/runtime/live2d-focus-utils.mjs";
-import { FocusCenterConfig, PersistentToggleConfig, RuntimeRect } from "./app-store";
+import type {
+  FocusCenterConfig,
+  PersistentToggleConfig,
+  RuntimeRect,
+} from "@/domains/types";
+import { applyLive2DFocus } from "@/runtime/live2d-focus-utils.ts";
 
 function getAdapter(): any {
   return (window as any).getLAppAdapter?.();

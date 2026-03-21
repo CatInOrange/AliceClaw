@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   applyFailedMotionPreload,
   applySuccessfulMotionPreload,
-} from "../live2d-motion-preload-utils.mjs";
+} from "../live2d-motion-preload-utils.ts";
 
 test("applySuccessfulMotionPreload waits for the remaining motions", () => {
   const result = applySuccessfulMotionPreload({

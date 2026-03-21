@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resolveActiveLive2DCanvas } from "../live2d-canvas-binding-utils.mjs";
+import { resolveActiveLive2DCanvas } from "../live2d-canvas-binding-utils.ts";
 
 test("resolveActiveLive2DCanvas keeps the current canvas when it is still connected", () => {
   const currentCanvas = { id: "old", isConnected: true };

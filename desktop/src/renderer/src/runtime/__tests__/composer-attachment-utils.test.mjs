@@ -5,7 +5,7 @@ import {
   createFileComposerAttachment,
   createTempFileComposerAttachment,
   resolveComposerAttachmentChatInput,
-} from "../composer-attachment-utils.mjs";
+} from "../composer-attachment-utils.ts";
 
 test("createTempFileComposerAttachment keeps screenshot previews as file URLs until send time", () => {
   assert.deepEqual(

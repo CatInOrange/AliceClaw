@@ -5,7 +5,7 @@ import {
   createNextPlaybackVersion,
   isPlaybackVersionCurrent,
   shouldSpeakRealtimeMessage,
-} from "../speech-runtime-utils.mjs";
+} from "../speech-runtime-utils.ts";
 
 test("shouldSpeakRealtimeMessage ignores current-session assistant messages that are not push", () => {
   assert.equal(

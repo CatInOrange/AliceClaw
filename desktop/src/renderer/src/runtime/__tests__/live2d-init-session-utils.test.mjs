@@ -6,7 +6,7 @@ import {
   getActiveLive2DInitializationSession,
   isLive2DInitializationSessionCurrent,
   shouldContinueLive2DAssetLoad,
-} from "../live2d-init-session-utils.mjs";
+} from "../live2d-init-session-utils.ts";
 
 test("beginLive2DInitializationSession invalidates the previous session", () => {
   const store = { activeSessionId: 0 };

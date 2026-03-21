@@ -5,7 +5,7 @@ import {
   getComposerAction,
   mapLunariaMessageToDisplayMessage,
   resolveAutomationNoteKind,
-} from "../chat-surface-utils.mjs";
+} from "../chat-surface-utils.ts";
 
 test("getComposerAction returns noop when nothing to send and nothing streaming", () => {
   assert.equal(getComposerAction({

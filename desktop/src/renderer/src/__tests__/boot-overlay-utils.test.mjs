@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   ensureBootOverlay,
   hideBootOverlay,
-} from "../boot-overlay-utils.mjs";
+} from "../boot-overlay-utils.ts";
 
 function createFakeElement(tagName, ownerDocument) {
   return {

@@ -4,14 +4,14 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCamera } from '@/context/camera-context';
 import { useScreenCaptureContext } from '@/context/screen-capture-context';
-import { toaster } from "@/components/ui/toaster";
+import { toaster } from "@/shared/ui/toaster";
 import {
   DEFAULT_IMAGE_COMPRESSION_QUALITY,
   DEFAULT_IMAGE_MAX_WIDTH,
   IMAGE_COMPRESSION_QUALITY_KEY,
   IMAGE_MAX_WIDTH_KEY,
   readMediaCaptureNumber,
-} from '@/runtime/media-capture-preferences.mjs';
+} from '@/runtime/media-capture-preferences.ts';
 
 // Add type definition for ImageCapture
 declare class ImageCapture {

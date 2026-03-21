@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { shouldRenderLive2DFrame } from "../live2d-render-loop-utils.mjs";
+import { shouldRenderLive2DFrame } from "../live2d-render-loop-utils.ts";
 
 test("shouldRenderLive2DFrame returns true for the active initialized delegate", () => {
   const instance = {};

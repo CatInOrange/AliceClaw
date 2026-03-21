@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { shouldScrollPetMessagesToBottom } from "../pet-message-scroll-utils.mjs";
+import { shouldScrollPetMessagesToBottom } from "../pet-message-scroll-utils.ts";
 
 test("shouldScrollPetMessagesToBottom when entering chat surface", () => {
   assert.equal(shouldScrollPetMessagesToBottom({

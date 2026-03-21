@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toaster } from '../components/ui/toaster';
+import { toaster } from '@/shared/ui/toaster';
 import i18n from '@/i18n';
 
 export type ModeType = 'window' | 'pet';

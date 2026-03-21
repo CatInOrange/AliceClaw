@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { selectCurrentSessionMessages } from "../app-store-selectors.mjs";
+import { selectCurrentSessionMessages } from "../app-store-selectors.ts";
 
 test("selectCurrentSessionMessages returns a stable empty array before a session is selected", () => {
   const state = {

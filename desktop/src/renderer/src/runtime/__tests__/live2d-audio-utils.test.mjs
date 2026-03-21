@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { getLipSyncPlaybackMode } from "../live2d-audio-utils.mjs";
+import { getLipSyncPlaybackMode } from "../live2d-audio-utils.ts";
 
 test("getLipSyncPlaybackMode prefers wav handler for wav mime types", () => {
   assert.equal(getLipSyncPlaybackMode({

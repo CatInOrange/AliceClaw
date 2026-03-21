@@ -962,6 +962,7 @@ export function LunariaRuntimeProvider({
     });
   }, []);
 
+  // TODO: not used at all, delete it ?
   const capturePrimaryScreenAttachment = useCallback(async () => {
     const dataUrl = await window.api?.capturePrimaryScreen?.();
     if (!dataUrl) {

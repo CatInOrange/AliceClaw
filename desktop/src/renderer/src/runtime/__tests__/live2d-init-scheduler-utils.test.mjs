@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   cancelScheduledLive2DInitialization,
   scheduleLive2DInitialization,
-} from "../live2d-init-scheduler-utils.mjs";
+} from "../live2d-init-scheduler-utils.ts";
 
 test("scheduleLive2DInitialization clears the previous pending timer before scheduling a new one", () => {
   const cleared = [];

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   shouldUseGlobalCursorTracking,
   toRendererPointerFromScreenPoint,
-} from "../global-cursor-utils.mjs";
+} from "../global-cursor-utils.ts";
 
 test("shouldUseGlobalCursorTracking only enables polling for pet mode when mouse follow is on", () => {
   assert.equal(

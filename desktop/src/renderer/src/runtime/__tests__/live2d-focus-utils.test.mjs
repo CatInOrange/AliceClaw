@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { applyLive2DFocus } from "../live2d-focus-utils.mjs";
+import { applyLive2DFocus } from "../live2d-focus-utils.ts";
 
 test("applyLive2DFocus prefers model.focus when available", () => {
   const calls = [];

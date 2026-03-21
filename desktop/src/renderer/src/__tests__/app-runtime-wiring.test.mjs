@@ -6,8 +6,16 @@ import { fileURLToPath } from "node:url";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const appSource = readFileSync(resolve(currentDir, "../App.tsx"), "utf8");
+const rootAppSource = readFileSync(resolve(currentDir, "../app/root-app.tsx"), "utf8");
+const providersSource = readFileSync(
+  resolve(currentDir, "../app/providers/app-providers.tsx"),
+  "utf8",
+);
 
-test("App uses the lunaria runtime without mounting the legacy websocket handler", () => {
-  assert.match(appSource, /LunariaRuntimeProvider/);
-  assert.doesNotMatch(appSource, /WebSocketHandler/);
+test("App routes through the new root app and command provider without the legacy websocket handler", () => {
+  assert.match(appSource, /@\/app\/root-app/);
+  assert.match(rootAppSource, /AppProviders/);
+  assert.match(providersSource, /RendererCommandProvider/);
+  assert.doesNotMatch(providersSource, /WebSocketHandler/);
+  assert.doesNotMatch(providersSource, /LunariaRuntimeProvider/);
 });

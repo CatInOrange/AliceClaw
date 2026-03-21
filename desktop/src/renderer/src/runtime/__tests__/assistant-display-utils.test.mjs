@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resolveAssistantDisplayName } from "../assistant-display-utils.mjs";
+import { resolveAssistantDisplayName } from "../assistant-display-utils.ts";
 
 test("resolveAssistantDisplayName prefers the configured character name", () => {
   assert.equal(

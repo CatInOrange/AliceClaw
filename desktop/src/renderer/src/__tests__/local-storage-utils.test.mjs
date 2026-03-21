@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resolveStorageValue } from "../local-storage-utils.mjs";
+import { resolveStorageValue } from "../local-storage-utils.ts";
 
 test("resolveStorageValue applies functional updates against the current stored value", () => {
   const result = resolveStorageValue(

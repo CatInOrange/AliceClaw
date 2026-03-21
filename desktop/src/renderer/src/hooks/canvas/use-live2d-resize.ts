@@ -6,7 +6,7 @@ import { ModelInfo } from '@/context/live2d-config-context';
 import { LAppDelegate } from '../../../WebSDK/src/lappdelegate';
 import { LAppLive2DManager } from '../../../WebSDK/src/lapplive2dmanager';
 import { useMode } from '@/context/mode-context';
-import { shouldResizeLive2DCanvas } from '@/runtime/live2d-resize-utils.mjs';
+import { shouldResizeLive2DCanvas } from '@/runtime/live2d-resize-utils.ts';
 
 // Constants for model scaling behavior
 const MIN_SCALE = 0.1;

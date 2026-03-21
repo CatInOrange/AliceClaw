@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { getConnectionStateAfterChatError } from "../chat-runtime-utils.mjs";
+import { getConnectionStateAfterChatError } from "../chat-runtime-utils.ts";
 
 test("getConnectionStateAfterChatError keeps idle for AbortError", () => {
   assert.equal(

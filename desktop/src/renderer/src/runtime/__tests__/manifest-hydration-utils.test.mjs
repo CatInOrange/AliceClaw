@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { getManifestHydrationState } from "../manifest-hydration-utils.mjs";
+import { getManifestHydrationState } from "../manifest-hydration-utils.ts";
 
 function buildManifest() {
   return {

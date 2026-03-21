@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   formatChatMessageMeta,
   formatChatMessageTimestamp,
-} from "../chat-time-utils.mjs";
+} from "../chat-time-utils.ts";
 
 test("formatChatMessageTimestamp omits seconds for messages from today", () => {
   const now = new Date(2026, 2, 20, 10, 0, 0);

@@ -1,6 +1,7 @@
-import { ComposerAttachment, dataUrlToComposerAttachment } from "./app-store";
+import type { ComposerAttachment } from "@/domains/types";
+import { dataUrlToComposerAttachment } from "@/domains/composer/store";
 import { playExpression, playMotion } from "./live2d-bridge";
-import { rebuildPluginCatalogState } from "./plugin-loader-utils.mjs";
+import { rebuildPluginCatalogState } from "./plugin-loader-utils.ts";
 
 export type PluginPermission =
   | "desktop.captureScreen"

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resetLive2DRuntime } from "../live2d-runtime-reset-utils.mjs";
+import { resetLive2DRuntime } from "../live2d-runtime-reset-utils.ts";
 
 test("resetLive2DRuntime releases runtime singletons in dependency order", () => {
   const calls = [];

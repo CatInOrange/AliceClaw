@@ -13,7 +13,7 @@ import { useMode } from '@/context/mode-context';
 import {
   cancelScheduledLive2DInitialization,
   scheduleLive2DInitialization,
-} from "@/runtime/live2d-init-scheduler-utils.mjs";
+} from "@/runtime/live2d-init-scheduler-utils.ts";
 
 interface UseLive2DModelProps {
   modelInfo: ModelInfo | undefined;

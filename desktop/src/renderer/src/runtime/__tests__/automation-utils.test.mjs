@@ -5,7 +5,7 @@ import {
   DEFAULT_AUTOMATION_CONFIG,
   normalizeAutomationConfig,
   shouldRunAutomationRule,
-} from "../automation-utils.mjs";
+} from "../automation-utils.ts";
 
 test("normalizeAutomationConfig merges defaults and clamps numeric values", () => {
   const config = normalizeAutomationConfig({

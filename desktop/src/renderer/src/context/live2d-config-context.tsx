@@ -2,7 +2,7 @@ import {
   createContext, useCallback, useContext, useMemo, useState,
 } from 'react';
 import { useLocalStorage } from '@/hooks/utils/use-local-storage';
-import { buildStoredModelInfo } from '@/live2d-config-utils.mjs';
+import { buildStoredModelInfo } from '@/live2d-config-utils.ts';
 import { useConfig } from '@/context/character-config-context';
 
 /**

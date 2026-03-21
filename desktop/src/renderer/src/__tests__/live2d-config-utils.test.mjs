@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildStoredModelInfo } from "../live2d-config-utils.mjs";
+import { buildStoredModelInfo } from "../live2d-config-utils.ts";
 
 test("buildStoredModelInfo preserves previous pointerInteractive and scrollToResize when omitted", () => {
   const result = buildStoredModelInfo(

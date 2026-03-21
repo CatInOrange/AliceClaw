@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { rebuildPluginCatalogState } from "../plugin-loader-utils.mjs";
+import { rebuildPluginCatalogState } from "../plugin-loader-utils.ts";
 
 test("rebuildPluginCatalogState clears loaded plugins and indexes capabilities from fresh items", () => {
   const loadedPlugins = new Map([

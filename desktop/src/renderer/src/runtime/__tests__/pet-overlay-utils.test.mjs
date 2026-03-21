@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   getPetOverlayCenter,
   getPetShellBackgroundStyle,
-} from "../pet-overlay-utils.mjs";
+} from "../pet-overlay-utils.ts";
 
 test("getPetOverlayCenter returns the center of the active work area in overlay coordinates", () => {
   assert.deepEqual(

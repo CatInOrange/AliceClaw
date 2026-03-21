@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   getLunariaScrollbarStyles,
   shouldAutoScrollMessageList,
-} from "../chat-shell-utils.mjs";
+} from "../chat-shell-utils.ts";
 
 test("shouldAutoScrollMessageList scrolls to the latest message when the active session changes", () => {
   assert.equal(

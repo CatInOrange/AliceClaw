@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { toaster } from "@/components/ui/toaster";
+import { toaster } from "@/shared/ui/toaster";
 
 export function useSendAudio() {
   const sendAudioPartition = useCallback(

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resolveFocusCenterConfig } from "../focus-center-utils.mjs";
+import { resolveFocusCenterConfig } from "../focus-center-utils.ts";
 
 function buildManifest() {
   return {

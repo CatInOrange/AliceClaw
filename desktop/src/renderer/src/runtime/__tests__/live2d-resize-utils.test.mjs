@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { shouldResizeLive2DCanvas } from "../live2d-resize-utils.mjs";
+import { shouldResizeLive2DCanvas } from "../live2d-resize-utils.ts";
 
 test("shouldResizeLive2DCanvas ignores zero-sized containers before the first valid measurement", () => {
   assert.equal(

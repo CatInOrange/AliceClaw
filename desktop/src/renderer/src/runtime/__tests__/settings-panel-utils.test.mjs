@@ -4,7 +4,7 @@ import {
   normalizeSupportedLanguage,
   resolveProviderFieldLabel,
   resolveProviderFieldPlaceholder,
-} from "../settings-panel-utils.mjs";
+} from "../settings-panel-utils.ts";
 
 test("normalizeSupportedLanguage keeps supported languages and normalizes region variants", () => {
   assert.equal(normalizeSupportedLanguage("en"), "en");

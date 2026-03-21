@@ -54,6 +54,7 @@ export class MenuManager {
     ];
   }
 
+  // TODO: 菜单的中英文切换？目前硬编码了中文
   private updateTrayMenu(): void {
     if (!this.tray) return;
     // console.log('Updating tray menu, current mode:', this.currentMode)

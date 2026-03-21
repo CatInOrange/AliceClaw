@@ -120,10 +120,13 @@ function loadLunariaDesktopConfig(): LunariaDesktopConfig {
 }
 
 function getConfiguredBackendUrl(): string | null {
-  const backendUrl = String(loadLunariaDesktopConfig().desktop?.backendUrl || "").trim();
+  // TODO: no need to load entire config in frontend, should be configured in window config
+  const backendUrl = String(loadLunariaDesktopConfig().desktop?.backendUrl || "").trim(); 
   return backendUrl || null;
 }
 
+// TODO: 插件相关的放到独立文件
+// TODO: 运行时可能是一个独立的exe文件，可能找不到插件目录，需要在构建时把插件目录打包到资源里，并且在运行时正确地定位到这个目录
 function getBuiltinPluginRoots(): string[] {
   return [
     resolve(app.getAppPath(), "..", "frontend", "public", "plugins"),
@@ -195,6 +198,8 @@ function delay(ms: number): Promise<void> {
   });
 }
 
+// TODO: 截图相关 放独立文件？
+// TODO: should it be here?
 async function captureDisplayResult(
   targetDisplay: Electron.Display,
   purpose: "attachment" | "selection" = "attachment",

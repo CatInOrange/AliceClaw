@@ -44,6 +44,7 @@ class ChatService:
         agent = str(body.get("agent", defaults.get("agent") or provider.get("agent") or "")).strip()
         session_name = str(body.get("session", defaults.get("session") or provider.get("session") or "")).strip()
         # Provider overrides. Secrets stay server-side and are not accepted from the browser.
+        # TODO: 这里要解耦，改为调用provider的接口来解析
         overrides = dict(provider)
         if provider.get("type") == "openclaw-channel":
             bridge_url_override = str(body.get("bridgeUrl") or "").strip()

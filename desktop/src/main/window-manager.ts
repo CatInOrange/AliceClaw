@@ -294,6 +294,7 @@ export class WindowManager {
       this.window.setFullScreen(false);
     }
 
+    // TODO: no need to hide the window
     this.window.hide();
     return getScreenshotSelectionBounds(displayBounds || screen.getPrimaryDisplay().bounds);
   }
@@ -368,6 +369,7 @@ export class WindowManager {
     }
 
     this.window.setBounds(restoreState.bounds);
+    // TODO: 截图前不隐藏，这里也不用恢复了
     this.window.show();
     this.window.setOpacity(1);
     if (restoreConfig.moveTopAfterShow) {

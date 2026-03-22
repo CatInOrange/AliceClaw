@@ -2,7 +2,11 @@ const ALLOWED_OVERRIDE_KEYS = new Set([
   "apiKey",
   "baseUrl",
   "bridgeUrl",
+  "embeddingApiKey",
+  "embeddingBaseUrl",
+  "embeddingModel",
   "model",
+  "memoryChromaPath",
   "voice",
   "speed",
   "responseFormat",
@@ -16,6 +20,8 @@ const ALLOWED_OVERRIDE_KEYS = new Set([
   "agent",
   "session",
   "token",
+  "promptMarkdownFiles",
+  "userId",
   "wsUrl",
 ]);
 

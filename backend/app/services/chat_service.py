@@ -50,13 +50,23 @@ class ChatService:
             bridge_url_override = str(body.get("bridgeUrl") or "").strip()
             if bridge_url_override:
                 overrides["bridgeUrl"] = bridge_url_override
-        elif provider.get("type") == "openai-compatible":
-            base_url_override = str(body.get("baseUrl") or "").strip()
-            model_override = str(body.get("model") or "").strip()
-            if base_url_override:
-                overrides["baseUrl"] = base_url_override
-            if model_override:
-                overrides["model"] = model_override
+        elif provider.get("type") == "lunaria":
+            for field in (
+                "baseUrl",
+                "apiKey",
+                "model",
+                "embeddingBaseUrl",
+                "embeddingApiKey",
+                "embeddingModel",
+                "userId",
+                "promptMarkdownFiles",
+                "agent",
+                "session",
+                "memoryChromaPath",
+            ):
+                value = str(body.get(field) or "").strip()
+                if value:
+                    overrides[field] = value
 
         attachments = body.get("attachments") or []
         parsed_attachments = []
@@ -154,7 +164,21 @@ class ChatService:
 
         return msg
 
-    def run_chat_stream(self, resolved: ChatResolvedRequest, emit_delta) -> dict:
+    def _build_prior_messages(self, session_id: str, *, limit: int = 12) -> list[dict]:
+        history = self.messages.list_session_messages(session_id, limit=2000)
+        items: list[dict] = []
+        for message in history[-max(1, int(limit or 12)):]:
+            role = str(message.get("role") or "").strip()
+            if role not in {"user", "assistant"}:
+                continue
+            text = str(message.get("text") or "").strip()
+            if not text:
+                continue
+            items.append({"role": role, "content": text})
+        return items
+
+    def run_chat_stream(self, resolved: ChatResolvedRequest, emit_delta, *, session_id: str = "", route_key: str = "") -> dict:
+        session_key = f"agent:{resolved.agent}:{resolved.session_name}" if resolved.agent and resolved.session_name else ""
         backend = create_agent_backend(resolved.provider)
         return backend.stream_chat(
             ChatRequest(
@@ -163,6 +187,12 @@ class ChatService:
                 session_name=resolved.session_name,
                 model_config=resolved.model_config,
                 attachments=resolved.attachments,
+                prior_messages=self._build_prior_messages(session_id) if session_id else [],
+                context={
+                    "sessionId": session_id,
+                    "routeKey": route_key,
+                    "runId": session_key or route_key,
+                },
             ),
             emit=emit_delta,
         )

@@ -59,7 +59,22 @@ def _apply_provider_env_overrides(config: dict) -> None:
         if not provider_id:
             continue
         env_key_prefix = provider_id.upper().replace('-', '_')
-        for field in ('token', 'apiKey', 'baseUrl', 'wsUrl', 'bridgeUrl', 'model', 'agent', 'session'):
+        for field in (
+            'token',
+            'apiKey',
+            'baseUrl',
+            'wsUrl',
+            'bridgeUrl',
+            'model',
+            'agent',
+            'session',
+            'embeddingBaseUrl',
+            'embeddingApiKey',
+            'embeddingModel',
+            'userId',
+            'promptMarkdownFiles',
+            'memoryChromaPath',
+        ):
             env_name = f'LUNARIA_CHAT_PROVIDER_{env_key_prefix}_{field.upper()}'
             if env_name in os.environ:
                 provider[field] = os.environ[env_name]

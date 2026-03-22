@@ -30,9 +30,10 @@ function buildManifest(fieldsByProvider, ttsFieldsByProvider = {}) {
 
 test("resolveProviderFieldState seeds provider fields from manifest values", () => {
   const manifest = buildManifest({
-    "live2d-channel": {
-      bridgeUrl: "ws://127.0.0.1:18081",
-      agent: "main",
+    lunaria: {
+      baseUrl: "http://127.0.0.1:8317/v1",
+      embeddingBaseUrl: "http://127.0.0.1:11434/v1",
+      userId: "default",
     },
   });
 
@@ -44,12 +45,14 @@ test("resolveProviderFieldState seeds provider fields from manifest values", () 
     }),
     {
       values: {
-        "live2d-channel.bridgeUrl": "ws://127.0.0.1:18081",
-        "live2d-channel.agent": "main",
+        "lunaria.baseUrl": "http://127.0.0.1:8317/v1",
+        "lunaria.embeddingBaseUrl": "http://127.0.0.1:11434/v1",
+        "lunaria.userId": "default",
       },
       manifestValues: {
-        "live2d-channel.bridgeUrl": "ws://127.0.0.1:18081",
-        "live2d-channel.agent": "main",
+        "lunaria.baseUrl": "http://127.0.0.1:8317/v1",
+        "lunaria.embeddingBaseUrl": "http://127.0.0.1:11434/v1",
+        "lunaria.userId": "default",
       },
     },
   );

@@ -12,9 +12,18 @@ CHAT_PROVIDER_FIELD_SCHEMAS = {
         {'key': 'agent', 'label': 'Agent', 'input': 'text', 'placeholder': 'main', 'defaultValue': 'main'},
         {'key': 'session', 'label': 'Session', 'input': 'text', 'placeholder': 'main', 'defaultValue': 'main'},
     ],
-    'openai-compatible': [
+    'lunaria': [
         {'key': 'baseUrl', 'label': 'Base URL', 'input': 'text', 'placeholder': 'http://127.0.0.1:8317/v1', 'defaultValue': ''},
+        {'key': 'apiKey', 'label': 'API Key', 'input': 'password', 'placeholder': '', 'defaultValue': ''},
         {'key': 'model', 'label': 'Provider Model', 'input': 'text', 'placeholder': 'gpt-5.4', 'defaultValue': 'gpt-5.4'},
+        {'key': 'embeddingBaseUrl', 'label': 'Embedding Base URL', 'input': 'text', 'placeholder': 'http://127.0.0.1:11434/v1', 'defaultValue': ''},
+        {'key': 'embeddingApiKey', 'label': 'Embedding API Key', 'input': 'password', 'placeholder': '', 'defaultValue': ''},
+        {'key': 'embeddingModel', 'label': 'Embedding Model', 'input': 'text', 'placeholder': 'text-embedding-3-small', 'defaultValue': 'text-embedding-3-small'},
+        {'key': 'userId', 'label': 'User ID', 'input': 'text', 'placeholder': 'default', 'defaultValue': 'default'},
+        {'key': 'promptMarkdownFiles', 'label': 'Prompt Markdown Files', 'input': 'textarea', 'placeholder': 'ROLE.md, MEMORY.md', 'defaultValue': ''},
+        {'key': 'agent', 'label': 'Agent', 'input': 'text', 'placeholder': 'main', 'defaultValue': 'main'},
+        {'key': 'session', 'label': 'Session', 'input': 'text', 'placeholder': 'main', 'defaultValue': 'main'},
+        {'key': 'memoryChromaPath', 'label': 'Memory Chroma Path', 'input': 'text', 'placeholder': 'data/mem0/chroma', 'defaultValue': 'data/mem0/chroma'},
     ],
 }
 
@@ -172,7 +181,7 @@ def build_model_manifest(model_config: dict) -> dict:
             'enabled': True,
             'defaultProviderId': chat_config.get('defaultProviderId') or providers[0]['id'],
             'providers': providers,
-            'note': chat_config.get('note') or '可手动选择 OpenClaw Channel bridge，或任意 OpenAI-compatible API。',
+            'note': chat_config.get('note') or '可手动选择 OpenClaw Channel bridge，或启用 Lunaria agent。其记忆由 Mem0 管理，AGENTS.md / IDENTIFY.md 从 ~/.lunaria 读取。',
             'tts': {
                 'enabled': bool(tts_config.get('enabled', True)),
                 'provider': str(tts_config.get('provider') or 'edge-tts'),

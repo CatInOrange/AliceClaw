@@ -22,13 +22,34 @@ class ManifestCleanupTests(unittest.TestCase):
 
         provider_types = {item["type"] for item in manifest["chat"]["providers"]}
         tts_provider_ids = [item["id"] for item in manifest["chat"]["tts"]["providers"]]
+        lunaria_provider = next(item for item in manifest["chat"]["providers"] if item["type"] == "lunaria")
+        lunaria_field_keys = [field["key"] for field in lunaria_provider["fields"]]
         openai_tts_provider = next(item for item in manifest["chat"]["tts"]["providers"] if item["id"] == "openai-compatible")
         openai_tts_field_keys = [field["key"] for field in openai_tts_provider["fields"]]
 
-        self.assertEqual(provider_types, {"openclaw-channel", "openai-compatible"})
+        self.assertEqual(provider_types, {"openclaw-channel", "lunaria"})
         self.assertEqual(tts_provider_ids, ["edge-tts", "openai-compatible", "gpt-sovits"])
         self.assertNotEqual(manifest["chat"]["defaultProviderId"], "gateway")
+        self.assertEqual(
+            lunaria_field_keys,
+            [
+                "baseUrl",
+                "apiKey",
+                "model",
+                "embeddingBaseUrl",
+                "embeddingApiKey",
+                "embeddingModel",
+                "userId",
+                "promptMarkdownFiles",
+                "agent",
+                "session",
+                "memoryChromaPath",
+            ],
+        )
         self.assertEqual(openai_tts_field_keys[:3], ["baseUrl", "model", "voice"])
+
+        lunaria_provider_names = [item["name"] for item in manifest["chat"]["providers"] if item["type"] == "lunaria"]
+        self.assertEqual(lunaria_provider_names, ["Lunaria"])
 
     def test_agent_backend_registry_does_not_include_gateway(self) -> None:
         self.assertNotIn("gateway", AGENT_BACKEND_REGISTRY)

@@ -494,7 +494,7 @@ class ChatStreamingService:
 
             def run_provider_blocking() -> None:
                 try:
-                    result = chat_service.run_chat_stream(resolved, emit)
+                    result = chat_service.run_chat_stream(resolved, emit, session_id=session_id, route_key=requested_route_key)
                     loop.call_soon_threadsafe(set_result, result)
                 except Exception as exc:  # noqa: BLE001
                     loop.call_soon_threadsafe(set_exception, exc)

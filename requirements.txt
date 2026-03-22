@@ -4,3 +4,5 @@ uvicorn
 pydantic
 edge-tts
 websockets
+chromadb
+mem0ai

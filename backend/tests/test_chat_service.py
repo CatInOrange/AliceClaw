@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from backend.app.config import get_default_model_id, load_config
+from backend.app.agents.registry import create_agent_backend
 from backend.app.services.chat_service import ChatService
 from backend.app.store import DbConfig, MessageStore, SessionStore
 
@@ -46,8 +47,29 @@ class ChatServiceTests(unittest.TestCase):
             }
         )
 
-        self.assertIn(resolved.provider["type"], {"openclaw-channel", "openai-compatible"})
+        self.assertIn(resolved.provider["type"], {"openclaw-channel", "lunaria"})
         self.assertNotEqual(resolved.provider["type"], "gateway")
+
+    def test_legacy_chat_provider_types_are_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unsupported provider type: openai-compatible"):
+            create_agent_backend(
+                {
+                    "id": "legacy-openai",
+                    "type": "openai-compatible",
+                    "baseUrl": "http://127.0.0.1:8317/v1",
+                    "model": "gpt-5.4",
+                }
+            )
+
+        with self.assertRaisesRegex(ValueError, "unsupported provider type: mem0"):
+            create_agent_backend(
+                {
+                    "id": "legacy-mem0",
+                    "type": "mem0",
+                    "baseUrl": "http://127.0.0.1:8317/v1",
+                    "model": "gpt-5.4",
+                }
+            )
 
 
 if __name__ == "__main__":

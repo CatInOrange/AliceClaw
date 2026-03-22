@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from .base import AgentBackend
-from .openai_compatible import OpenAICompatibleAgentBackend
+from .lunaria import LunariaAgentBackend
 from .openclaw_channel import OpenClawChannelAgentBackend
 
 AGENT_BACKEND_REGISTRY: dict[str, type[AgentBackend]] = {
-    'openai-compatible': OpenAICompatibleAgentBackend,
+    'lunaria': LunariaAgentBackend,
     'openclaw-channel': OpenClawChannelAgentBackend,
 }
 

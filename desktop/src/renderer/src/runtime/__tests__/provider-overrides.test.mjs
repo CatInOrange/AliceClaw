@@ -45,6 +45,40 @@ test("getProviderOverridesPayload ignores blank or unknown override values", () 
   });
 });
 
+test("getProviderOverridesPayload keeps lunaria chat overrides", () => {
+  const provider = {
+    id: "lunaria-main",
+    fields: [
+      { key: "baseUrl" },
+      { key: "embeddingBaseUrl" },
+      { key: "embeddingModel" },
+      { key: "userId" },
+      { key: "promptMarkdownFiles" },
+      { key: "memoryChromaPath" },
+      { key: "ignored" },
+    ],
+  };
+
+  const values = {
+    "lunaria-main.baseUrl": "http://127.0.0.1:8317/v1",
+    "lunaria-main.embeddingBaseUrl": "http://127.0.0.1:11434/v1",
+    "lunaria-main.embeddingModel": "text-embedding-3-small",
+    "lunaria-main.userId": "alice",
+    "lunaria-main.promptMarkdownFiles": "ROLE.md\nMEMORY.md",
+    "lunaria-main.memoryChromaPath": "data/mem0/chroma",
+    "lunaria-main.ignored": "noop",
+  };
+
+  assert.deepEqual(getProviderOverridesPayload(provider, values), {
+    baseUrl: "http://127.0.0.1:8317/v1",
+    embeddingBaseUrl: "http://127.0.0.1:11434/v1",
+    embeddingModel: "text-embedding-3-small",
+    userId: "alice",
+    promptMarkdownFiles: "ROLE.md\nMEMORY.md",
+    memoryChromaPath: "data/mem0/chroma",
+  });
+});
+
 test("getProviderOverridesPayload can nest TTS-compatible overrides under a dedicated key", () => {
   const provider = {
     id: "openai-compatible",

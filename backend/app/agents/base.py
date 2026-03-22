@@ -39,6 +39,9 @@ class ChatRequest:
     session_name: str | None = None
     model_config: dict | None = None
     attachments: list[ChatAttachment] = field(default_factory=list)
+    prior_messages: list[dict] = field(default_factory=list)
+    extra_system_prompts: list[str] = field(default_factory=list)
+    context: dict = field(default_factory=dict)
 
 
 class AgentBackend(ABC):

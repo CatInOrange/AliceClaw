@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { LunariaMessage, StreamingMessage } from "@/domains/types";
+import { reconcileSessionMessages } from "@/runtime/chat-runtime-utils.ts";
 
 interface ChatState {
   messagesBySession: Record<string, LunariaMessage[]>;
@@ -29,7 +30,7 @@ export const useChatStore = create<ChatState>((set) => ({
   setMessagesForSession: (sessionId, messages) => set((state) => ({
     messagesBySession: {
       ...state.messagesBySession,
-      [sessionId]: messages,
+      [sessionId]: reconcileSessionMessages(state.messagesBySession[sessionId] || [], messages),
     },
   })),
   appendMessageForSession: (sessionId, message) => set((state) => ({

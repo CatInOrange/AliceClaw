@@ -378,91 +378,101 @@ class ChatStreamingService:
             with contextlib.suppress(asyncio.CancelledError, Exception):
                 await tts_worker_task
 
+        def build_timeline_frame(unit: dict, *, audio_url: str = "", content_type: str = "", error: str = "") -> str:
+            payload_unit = {
+                "i": int(unit.get("i") or 0),
+                "text": str(unit.get("text") or ""),
+                "directives": unit.get("directives") or [],
+                "audioUrl": str(audio_url or ""),
+                "audioMs": 0,
+            }
+            if content_type:
+                payload_unit["contentType"] = content_type
+            if error:
+                payload_unit["error"] = error
+            return format_sse(
+                {
+                    "seq": 0,
+                    "type": "timeline",
+                    "ts": 0,
+                    "payload": {"unit": payload_unit},
+                },
+                event_name="timeline",
+                include_id=False,
+            )
+
+        async def synthesize_tts_unit(unit: dict) -> tuple[int, str]:
+            unit_index = int(unit.get("i") or 0)
+            text = str(unit.get("text") or "")
+            directives = unit.get("directives") or []
+            if not text and not directives:
+                return unit_index, ""
+
+            if not text:
+                return unit_index, build_timeline_frame(unit)
+
+            try:
+                audio_bytes, content_type = await tts_service.synthesize(
+                    req=TtsRequest(
+                        text=text,
+                        mode="chat",
+                        provider_override=tts_provider_override,
+                        overrides=tts_overrides,
+                    )
+                )
+                ext = _safe_audio_extension(content_type)
+                fname = f"chat_{uuid.uuid4().hex}{ext}"
+                (uploads_dir / fname).write_bytes(audio_bytes)
+                audio_url = f"/uploads/{fname}"
+                return unit_index, build_timeline_frame(unit, audio_url=audio_url, content_type=content_type)
+            except Exception as exc:  # noqa: BLE001
+                return unit_index, build_timeline_frame(unit, error=str(exc))
+
         async def tts_worker() -> None:
-            nonlocal submitted_units
+            max_concurrency = 4
+            next_emit_index = 0
+            buffered_frames: dict[int, str] = {}
+            inflight: set[asyncio.Task[tuple[int, str]]] = set()
+            stop_requested = False
+
             while True:
-                unit = await tts_unit_q.get()
-                if unit.get("_type") == "_stop":
+                if stop_requested and not inflight:
                     break
-                text = str(unit.get("text") or "")
-                directives = unit.get("directives") or []
-                if not text and not directives:
-                    continue
 
-                if not text:
-                    await tts_sse_q.put(
-                        format_sse(
-                            {
-                                "seq": 0,
-                                "type": "timeline",
-                                "ts": 0,
-                                "payload": {"unit": {"i": submitted_units, "text": "", "directives": directives, "audioUrl": "", "audioMs": 0}},
-                            },
-                            event_name="timeline",
-                            include_id=False,
-                        )
-                    )
-                    submitted_units += 1
-                    continue
+                queue_get_task: asyncio.Task[dict] | None = None
+                wait_set: set[asyncio.Task] = set(inflight)
 
-                try:
-                    audio_bytes, content_type = await tts_service.synthesize(
-                        req=TtsRequest(
-                            text=text,
-                            mode="chat",
-                            provider_override=tts_provider_override,
-                            overrides=tts_overrides,
-                        )
-                    )
-                    ext = _safe_audio_extension(content_type)
-                    fname = f"chat_{uuid.uuid4().hex}{ext}"
-                    (uploads_dir / fname).write_bytes(audio_bytes)
-                    audio_url = f"/uploads/{fname}"
-                    await tts_sse_q.put(
-                        format_sse(
-                            {
-                                "seq": 0,
-                                "type": "timeline",
-                                "ts": 0,
-                                "payload": {
-                                    "unit": {
-                                        "i": submitted_units,
-                                        "text": text,
-                                        "directives": directives,
-                                        "audioUrl": audio_url,
-                                        "audioMs": 0,
-                                        "contentType": content_type,
-                                    }
-                                },
-                            },
-                            event_name="timeline",
-                            include_id=False,
-                        )
-                    )
-                except Exception as exc:  # noqa: BLE001
-                    await tts_sse_q.put(
-                        format_sse(
-                            {
-                                "seq": 0,
-                                "type": "timeline",
-                                "ts": 0,
-                                "payload": {
-                                    "unit": {
-                                        "i": submitted_units,
-                                        "text": text,
-                                        "directives": directives,
-                                        "audioUrl": "",
-                                        "audioMs": 0,
-                                        "error": str(exc),
-                                    }
-                                },
-                            },
-                            event_name="timeline",
-                            include_id=False,
-                        )
-                    )
-                finally:
-                    submitted_units += 1
+                if not stop_requested and len(inflight) < max_concurrency:
+                    queue_get_task = asyncio.create_task(tts_unit_q.get())
+                    wait_set.add(queue_get_task)
+
+                if not wait_set:
+                    break
+
+                done, pending = await asyncio.wait(wait_set, return_when=asyncio.FIRST_COMPLETED)
+
+                if queue_get_task and queue_get_task in done:
+                    unit = queue_get_task.result()
+                    if unit.get("_type") == "_stop":
+                        stop_requested = True
+                    else:
+                        inflight.add(asyncio.create_task(synthesize_tts_unit(unit)))
+                elif queue_get_task:
+                    queue_get_task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await queue_get_task
+
+                for task in list(done):
+                    if task is queue_get_task:
+                        continue
+                    inflight.discard(task)
+                    unit_index, frame = task.result()
+                    if frame:
+                        buffered_frames[unit_index] = frame
+
+                while next_emit_index in buffered_frames:
+                    await tts_sse_q.put(buffered_frames.pop(next_emit_index))
+                    next_emit_index += 1
 
         if want_tts:
             tts_worker_task = asyncio.create_task(tts_worker())
@@ -471,6 +481,20 @@ class ChatStreamingService:
             loop = asyncio.get_running_loop()
             delta_q: asyncio.Queue[dict] = asyncio.Queue(maxsize=200)
             result_fut: asyncio.Future[dict] = loop.create_future()
+            result: dict | None = None
+            assistant_raw = ""
+            assistant_visible = ""
+            assistant_actions: list[dict] = []
+            provider_complete = False
+
+            def drain_ready_tts_frames() -> list[str]:
+                frames: list[str] = []
+                while True:
+                    try:
+                        frames.append(tts_sse_q.get_nowait())
+                    except Exception:
+                        break
+                return frames
 
             def put_delta(payload: dict) -> None:
                 with contextlib.suppress(Exception):
@@ -502,12 +526,121 @@ class ChatStreamingService:
             loop.run_in_executor(None, run_provider_blocking)
 
             while True:
+                if want_tts:
+                    for frame in drain_ready_tts_frames():
+                        yield frame
+
+                if not provider_complete and result_fut.done() and delta_q.empty():
+                    result = await result_fut
+                    assistant_raw = str(result.get("reply") or "")
+                    structured_final = _try_parse_structured_reply(assistant_raw)
+                    if structured_final and isinstance(structured_final.get("speech"), str):
+                        final_speech_source = str(structured_final.get("speech") or "")
+                        assistant_visible = strip_stage_directives(final_speech_source)
+                        assistant_actions = structured_final.get("actions") if isinstance(structured_final.get("actions"), list) else []
+                    else:
+                        final_speech_source = assistant_raw
+                        assistant_visible = strip_stage_directives(assistant_raw)
+                        assistant_actions = []
+
+                    final_units, _ = speech_parser.finalize(
+                        allow_soft_break=True,
+                        soft_break_threshold=soft_break_threshold,
+                        min_segment_chars=min_segment_chars,
+                    )
+                    if final_units:
+                        pending_units.extend(final_units)
+
+                    if not speech_raw.strip():
+                        fallback_units, fallback_visible = _parse_full_speech_units(
+                            final_speech_source,
+                            allow_soft_break=True,
+                            soft_break_threshold=soft_break_threshold,
+                            min_segment_chars=min_segment_chars,
+                        )
+                        if fallback_units:
+                            pending_units.extend(fallback_units)
+                        elif assistant_visible.strip():
+                            pending_units.append({"text": assistant_visible.strip(), "directives": []})
+
+                        if fallback_visible.strip():
+                            yield format_sse(
+                                {
+                                    "seq": 0,
+                                    "type": "chunk",
+                                    "ts": 0,
+                                    "payload": {
+                                        "kind": "text",
+                                        "visibleText": fallback_visible,
+                                        "rawText": final_speech_source,
+                                    },
+                                },
+                                event_name="chunk",
+                                include_id=False,
+                            )
+
+                    if want_tts and pending_units:
+                        while pending_units:
+                            next_unit = dict(pending_units.pop(0))
+                            next_unit["i"] = submitted_units
+                            submitted_units += 1
+                            await tts_unit_q.put(next_unit)
+
+                    if want_tts:
+                        with contextlib.suppress(Exception):
+                            await tts_unit_q.put({"_type": "_stop"})
+
+                    provider_complete = True
+                    if not want_tts:
+                        break
+                    continue
+
+                if provider_complete:
+                    if not want_tts or tts_worker_task is None:
+                        break
+                    if tts_worker_task.done() and tts_sse_q.empty():
+                        break
+
+                    tts_frame_task = asyncio.create_task(tts_sse_q.get())
+                    done, pending = await asyncio.wait({tts_frame_task}, timeout=0.25, return_when=asyncio.FIRST_COMPLETED)
+                    for task in pending:
+                        task.cancel()
+                    for task in pending:
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await task
+                    if not done:
+                        continue
+                    yield tts_frame_task.result()
+                    continue
+
                 if result_fut.done() and delta_q.empty():
                     break
-                try:
-                    payload = await asyncio.wait_for(delta_q.get(), timeout=0.25)
-                except TimeoutError:
+
+                delta_task = asyncio.create_task(delta_q.get())
+                tts_frame_task: asyncio.Task[str] | None = None
+                wait_set: set[asyncio.Task] = {delta_task}
+                if want_tts and tts_worker_task and not tts_worker_task.done():
+                    tts_frame_task = asyncio.create_task(tts_sse_q.get())
+                    wait_set.add(tts_frame_task)
+
+                done, pending = await asyncio.wait(wait_set, timeout=0.25, return_when=asyncio.FIRST_COMPLETED)
+
+                for task in pending:
+                    task.cancel()
+                for task in pending:
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await task
+
+                if not done:
                     continue
+
+                if tts_frame_task and tts_frame_task in done:
+                    yield tts_frame_task.result()
+
+                if delta_task not in done:
+                    continue
+
+                payload = delta_task.result()
 
                 delta_text = str(payload.get("delta") or "")
                 if not delta_text:
@@ -550,17 +683,17 @@ class ChatStreamingService:
 
                 if want_tts and pending_units:
                     while pending_units:
-                        await tts_unit_q.put(pending_units.pop(0))
+                        next_unit = dict(pending_units.pop(0))
+                        next_unit["i"] = submitted_units
+                        submitted_units += 1
+                        await tts_unit_q.put(next_unit)
 
                 if want_tts:
-                    while True:
-                        try:
-                            frame = tts_sse_q.get_nowait()
-                        except Exception:
-                            break
+                    for frame in drain_ready_tts_frames():
                         yield frame
 
-            result = await result_fut
+            if result is None:
+                result = await result_fut
         except asyncio.CancelledError:
             await stop_tts_worker(force_cancel=True)
             return
@@ -573,64 +706,11 @@ class ChatStreamingService:
             )
             return
 
-        assistant_raw = str(result.get("reply") or "")
-        structured_final = _try_parse_structured_reply(assistant_raw)
-        if structured_final and isinstance(structured_final.get("speech"), str):
-            final_speech_source = str(structured_final.get("speech") or "")
-            assistant_visible = strip_stage_directives(final_speech_source)
-            assistant_actions = structured_final.get("actions") if isinstance(structured_final.get("actions"), list) else []
-        else:
-            final_speech_source = assistant_raw
-            assistant_visible = strip_stage_directives(assistant_raw)
-            assistant_actions = []
-
-        final_units, _ = speech_parser.finalize(
-            allow_soft_break=True,
-            soft_break_threshold=soft_break_threshold,
-            min_segment_chars=min_segment_chars,
-        )
-        if final_units:
-            pending_units.extend(final_units)
-
-        if not speech_raw.strip():
-            fallback_units, fallback_visible = _parse_full_speech_units(
-                final_speech_source,
-                allow_soft_break=True,
-                soft_break_threshold=soft_break_threshold,
-                min_segment_chars=min_segment_chars,
-            )
-            if fallback_units:
-                pending_units.extend(fallback_units)
-            elif assistant_visible.strip():
-                pending_units.append({"text": assistant_visible.strip(), "directives": []})
-
-            if fallback_visible.strip():
-                yield format_sse(
-                    {
-                        "seq": 0,
-                        "type": "chunk",
-                        "ts": 0,
-                        "payload": {
-                            "kind": "text",
-                            "visibleText": fallback_visible,
-                            "rawText": final_speech_source,
-                        },
-                    },
-                    event_name="chunk",
-                    include_id=False,
-                )
-
-        if want_tts and pending_units:
-            while pending_units:
-                await tts_unit_q.put(pending_units.pop(0))
-
         if want_tts:
-            await stop_tts_worker(force_cancel=False)
-            while True:
-                try:
-                    frame = tts_sse_q.get_nowait()
-                except Exception:
-                    break
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                if tts_worker_task:
+                    await tts_worker_task
+            for frame in drain_ready_tts_frames():
                 yield frame
 
         chat_service.persist_user_message(

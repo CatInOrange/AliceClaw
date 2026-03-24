@@ -4,9 +4,7 @@ export function getConnectionStateAfterChatError(error) {
 
 function normalizeAttachmentKey(attachment) {
   return [
-    String(attachment?.kind || ""),
     String(attachment?.mimeType || ""),
-    String(attachment?.filename || ""),
     String(attachment?.url || ""),
     String(attachment?.data || ""),
   ].join("|");

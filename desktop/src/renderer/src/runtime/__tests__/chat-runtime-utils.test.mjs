@@ -108,3 +108,45 @@ test("reconcileSessionMessages preserves duplicate optimistic messages in order"
     ["user_optimistic_1", "user_optimistic_2"],
   );
 });
+
+test("reconcileSessionMessages tolerates server-side attachment decoration for optimistic user messages", () => {
+  const existingMessages = [
+    {
+      id: "user_optimistic_1",
+      sessionId: "sess_1",
+      role: "user",
+      text: "看这个",
+      attachments: [
+        {
+          mimeType: "image/png",
+          data: "BASE64_PAYLOAD",
+        },
+      ],
+      source: "chat",
+      createdAt: 1711111111,
+    },
+  ];
+
+  const nextMessages = [
+    {
+      id: "msg_server_user_1",
+      sessionId: "sess_1",
+      role: "user",
+      text: "看这个",
+      attachments: [
+        {
+          kind: "image",
+          mimeType: "image/png",
+          data: "BASE64_PAYLOAD",
+        },
+      ],
+      source: "chat",
+      createdAt: 1711111112,
+    },
+  ];
+
+  assert.deepEqual(
+    reconcileSessionMessages(existingMessages, nextMessages).map((message) => message.id),
+    ["user_optimistic_1"],
+  );
+});

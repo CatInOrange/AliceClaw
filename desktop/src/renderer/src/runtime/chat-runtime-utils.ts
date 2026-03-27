@@ -46,3 +46,18 @@ export function reconcileSessionMessages(existingMessages, nextMessages) {
     };
   });
 }
+
+export function resolveCommittedChatState({
+  messagesBySession,
+  streamingMessage,
+  sessionId,
+  messages,
+}) {
+  return {
+    messagesBySession: {
+      ...messagesBySession,
+      [sessionId]: reconcileSessionMessages(messagesBySession[sessionId] || [], messages),
+    },
+    streamingMessage: streamingMessage?.sessionId === sessionId ? null : streamingMessage,
+  };
+}

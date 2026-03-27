@@ -628,6 +628,7 @@ export function RendererCommandProvider({
       sessionId,
       text: "",
       rawText: "",
+      createdAt: Math.floor(Date.now() / 1000),
     });
     state.setConnectionState("connecting");
     state.setSubtitle("");
@@ -709,8 +710,7 @@ export function RendererCommandProvider({
       );
 
       const nextMessages = await fetchMessages(normalizedBackendUrl, sessionId);
-      useAppStore.getState().setMessagesForSession(sessionId, nextMessages);
-      useAppStore.getState().setStreamingMessage(null);
+      useAppStore.getState().commitMessagesForSession(sessionId, nextMessages);
       useAppStore.getState().setConnectionState("open");
       const refreshed = await fetchSessions(normalizedBackendUrl);
       useAppStore.getState().setSessions(refreshed.sessions || []);

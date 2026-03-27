@@ -97,6 +97,7 @@ export interface StreamingMessage {
   sessionId: string;
   text: string;
   rawText: string;
+  createdAt: number;
 }
 
 export interface PluginCatalogItem {

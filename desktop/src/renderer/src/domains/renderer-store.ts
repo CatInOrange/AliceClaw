@@ -187,6 +187,7 @@ export function selectCurrentSessionMessages(state: LegacyRendererState) {
     messagesBySession: state.messagesBySession,
     streamingMessage: state.streamingMessage,
     setMessagesForSession: useChatStore.getState().setMessagesForSession,
+    commitMessagesForSession: useChatStore.getState().commitMessagesForSession,
     appendMessageForSession: useChatStore.getState().appendMessageForSession,
     upsertMessageForSession: useChatStore.getState().upsertMessageForSession,
     setStreamingMessage: useChatStore.getState().setStreamingMessage,

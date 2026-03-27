@@ -18,7 +18,10 @@ import {
   shouldAutoScrollMessageList,
 } from "@/runtime/chat-shell-utils.ts";
 import { resolveAutomationNoteKind } from "@/runtime/chat-surface-utils.ts";
-import { formatChatMessageMeta } from "@/runtime/chat-time-utils.ts";
+import {
+  formatChatMessageMeta,
+  formatStreamingMessageMeta,
+} from "@/runtime/chat-time-utils.ts";
 import {
   lunariaCardStyles,
   lunariaColors,
@@ -157,9 +160,10 @@ export function MessageList({
     streamingText: "",
   });
 
-  const activeStreamingText = currentSessionId && streamingMessage?.sessionId === currentSessionId
-    ? (streamingMessage.text || "")
-    : "";
+  const activeStreamingMessage = currentSessionId && streamingMessage?.sessionId === currentSessionId
+    ? streamingMessage
+    : null;
+  const activeStreamingText = activeStreamingMessage?.text || "";
   const hasStreaming = Boolean(activeStreamingText && currentSessionId);
 
   useEffect(() => {
@@ -322,7 +326,10 @@ export function MessageList({
           boxShadow="0 10px 24px rgba(121, 93, 77, 0.08)"
         >
           <Text fontSize="11px" color={lunariaColors.textSubtle} mb="1.5" fontWeight="600">
-            {assistantName || t("shell.speakerAssistant")} · {t("shell.streaming")}
+            {formatStreamingMessageMeta({
+              speaker: assistantName || t("shell.speakerAssistant"),
+              timestamp: activeStreamingMessage?.createdAt,
+            })}
           </Text>
           <Text whiteSpace="pre-wrap" fontSize={compact ? "sm" : "md"} lineHeight="1.75">
             {activeStreamingText || "..."}

@@ -1,11 +1,15 @@
 import { create } from "zustand";
 import { LunariaMessage, StreamingMessage } from "@/domains/types";
-import { reconcileSessionMessages } from "@/runtime/chat-runtime-utils.ts";
+import {
+  reconcileSessionMessages,
+  resolveCommittedChatState,
+} from "@/runtime/chat-runtime-utils.ts";
 
 interface ChatState {
   messagesBySession: Record<string, LunariaMessage[]>;
   streamingMessage: StreamingMessage | null;
   setMessagesForSession: (sessionId: string, messages: LunariaMessage[]) => void;
+  commitMessagesForSession: (sessionId: string, messages: LunariaMessage[]) => void;
   appendMessageForSession: (sessionId: string, message: LunariaMessage) => void;
   upsertMessageForSession: (sessionId: string, message: LunariaMessage) => void;
   setStreamingMessage: (message: StreamingMessage | null) => void;
@@ -33,6 +37,14 @@ export const useChatStore = create<ChatState>((set) => ({
       [sessionId]: reconcileSessionMessages(state.messagesBySession[sessionId] || [], messages),
     },
   })),
+  commitMessagesForSession: (sessionId, messages) => set((state) => (
+    resolveCommittedChatState({
+      messagesBySession: state.messagesBySession,
+      streamingMessage: state.streamingMessage,
+      sessionId,
+      messages,
+    })
+  )),
   appendMessageForSession: (sessionId, message) => set((state) => ({
     messagesBySession: {
       ...state.messagesBySession,

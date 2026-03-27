@@ -57,3 +57,15 @@ export function formatChatMessageMeta({
 
   return speakerLabel || timeLabel;
 }
+
+export function formatStreamingMessageMeta({
+  speaker,
+  timestamp,
+  now = new Date(),
+}) {
+  return formatChatMessageMeta({
+    speaker,
+    timestamp,
+    now,
+  });
+}

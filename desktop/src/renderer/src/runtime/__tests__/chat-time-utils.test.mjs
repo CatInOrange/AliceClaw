@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   formatChatMessageMeta,
   formatChatMessageTimestamp,
+  formatStreamingMessageMeta,
 } from "../chat-time-utils.ts";
 
 test("formatChatMessageTimestamp omits seconds for messages from today", () => {
@@ -34,5 +35,15 @@ test("formatChatMessageMeta joins speaker and formatted timestamp", () => {
   assert.equal(
     formatChatMessageMeta({ speaker: "Miku", timestamp, now }),
     "Miku · 03/18 07:08",
+  );
+});
+
+test("formatStreamingMessageMeta uses the stream start time instead of a streaming placeholder", () => {
+  const now = new Date(2026, 2, 20, 10, 0, 0);
+  const timestamp = Math.floor(new Date(2026, 2, 20, 9, 12, 33).getTime() / 1000);
+
+  assert.equal(
+    formatStreamingMessageMeta({ speaker: "Luna", timestamp, now }),
+    "Luna · 09:12",
   );
 });

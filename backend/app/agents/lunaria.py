@@ -85,7 +85,17 @@ class LunariaAgentBackend(AgentBackend):
         system_prompt = build_system_prompt(request)
         user_id, agent_id, run_id = self._memory_scope(request)
         mem0_service = get_mem0_service(self.provider_config)
+        markdown_started_at = time.perf_counter()
         markdown_sections = load_prompt_markdown_sections(self.provider_config)
+        _log_lunaria_trace(
+            self.provider_config,
+            request,
+            trace_id=trace_id,
+            event="prompt.markdown",
+            elapsedMs=_elapsed_ms(markdown_started_at),
+            sectionCount=len(markdown_sections),
+        )
+        memory_started_at = time.perf_counter()
         memory_results = normalize_memory_results(
             mem0_service.search(
                 query=request.user_text,
@@ -95,6 +105,16 @@ class LunariaAgentBackend(AgentBackend):
                 limit=DEFAULT_MEMORY_LIMIT,
                 scope="agent",
             )
+        )
+        _log_lunaria_trace(
+            self.provider_config,
+            request,
+            trace_id=trace_id,
+            event="memory.search",
+            elapsedMs=_elapsed_ms(memory_started_at),
+            query=str(request.user_text or "").strip(),
+            resultCount=len(memory_results),
+            scope="agent",
         )
         memory_prompt = _format_memory_system_prompt(memory_results)
         extra_prompts = [

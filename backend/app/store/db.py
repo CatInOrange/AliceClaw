@@ -14,8 +14,10 @@ This module will be used by stores (sessions/messages/files/events).
 """
 
 import sqlite3
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator
 
 from ..config import ROOT
 
@@ -28,7 +30,8 @@ class DbConfig:
     path: Path = DEFAULT_DB_PATH
 
 
-def connect(db: DbConfig) -> sqlite3.Connection:
+@contextmanager
+def connect(db: DbConfig) -> Iterator[sqlite3.Connection]:
     db.path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db.path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
@@ -38,7 +41,10 @@ def connect(db: DbConfig) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA synchronous = NORMAL")
     conn.execute("PRAGMA busy_timeout = 5000")
-    return conn
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 def migrate(conn: sqlite3.Connection) -> None:

@@ -35,8 +35,8 @@ import {
 import { getConnectionStateAfterChatError } from "@/runtime/chat-runtime-utils.ts";
 import {
   dispatchChatPlaybackActions,
-  waitForPlaybackQueue,
 } from "@/runtime/chat-playback-actions.ts";
+import { createSpeechPlaybackController } from "@/runtime/chat-speech-playback.ts";
 import { resolveFocusCenterConfig } from "@/runtime/focus-center-utils.ts";
 import { getManifestHydrationState } from "@/runtime/manifest-hydration-utils.ts";
 import { resolveProviderFieldState } from "@/runtime/provider-field-state.ts";
@@ -56,8 +56,6 @@ import {
   getLipSyncPlaybackMode,
 } from "@/runtime/live2d-audio-utils.ts";
 import {
-  createNextPlaybackVersion,
-  isPlaybackVersionCurrent,
   shouldSpeakRealtimeMessage,
 } from "@/runtime/speech-runtime-utils.ts";
 import {
@@ -285,12 +283,14 @@ export function RendererCommandProvider({
   const reconnectTimerRef = useRef<number | null>(null);
   const reconnectAttemptRef = useRef(0);
   const backendConnectionStoreRef = useRef({ activeSessionId: 0 });
-  const playbackQueueRef = useRef(Promise.resolve());
-  const playbackVersionRef = useRef(0);
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   const currentSessionRef = useRef<string | null>(null);
   const pluginRuntimeRef = useRef<ReturnType<typeof createPluginRuntime> | null>(null);
+  const speechPlaybackContextRef = useRef({
+    normalizedBackendUrl,
+    getCurrentTtsOverrides: () => ({}),
+  });
+  const speechPlaybackRef = useRef<ReturnType<typeof createSpeechPlaybackController> | null>(null);
   const streamingActionsRef = useRef<unknown[]>([]);
   const sendPayloadRef = useRef<((payload: {
     text: string;
@@ -364,11 +364,6 @@ export function RendererCommandProvider({
     [],
   );
 
-  const stopCurrentAudio = useCallback(() => {
-    audioManager.stopCurrentAudioAndLipSync();
-    currentAudioRef.current = null;
-  }, []);
-
   const playMusic = useCallback(async ({ url }: { url?: string; trackId?: string }) => {
     const automationMusic = useAppStore.getState().automation.music;
     const targetUrl = String(url || automationMusic.defaultUrl || "").trim();
@@ -414,112 +409,52 @@ export function RendererCommandProvider({
     return getProviderOverridesPayload(ttsProviderConfig, state.providerFieldValues, { nestKey: "ttsOverrides" });
   }, []);
 
-  const enqueueSpeech = useCallback((payload: {
-    text?: string;
-    audioUrl?: string;
-    audioMimeType?: string;
-    directives?: unknown[];
-    mode?: "chat" | "push";
-  }) => {
-    const queueVersion = playbackVersionRef.current;
-    playbackQueueRef.current = playbackQueueRef.current
-      .then(async () => {
-        if (!isPlaybackVersionCurrent(queueVersion, playbackVersionRef.current)) {
-          return;
-        }
-        applyStageDirectives(payload.directives || []);
+  speechPlaybackContextRef.current = {
+    normalizedBackendUrl,
+    getCurrentTtsOverrides,
+  };
 
-        let targetUrl = String(payload.audioUrl || "").trim();
-        let targetMimeType = String(payload.audioMimeType || "").trim();
-        let shouldRevoke = false;
-
-        if (!targetUrl && payload.text && useAppStore.getState().ttsEnabled) {
-          const state = useAppStore.getState();
-          const blob = await requestTts(normalizedBackendUrl, {
-            text: payload.text,
-            provider: state.ttsProvider,
-            mode: payload.mode || "chat",
-            ...getCurrentTtsOverrides(),
-          });
-          if (!isPlaybackVersionCurrent(queueVersion, playbackVersionRef.current)) {
-            return;
-          }
-          targetUrl = URL.createObjectURL(blob);
-          targetMimeType = blob.type || targetMimeType;
-          shouldRevoke = true;
-        }
-
-        if (!targetUrl) {
-          return;
-        }
-
-        await new Promise<void>((resolve) => {
-          if (!isPlaybackVersionCurrent(queueVersion, playbackVersionRef.current)) {
-            resolve();
-            return;
-          }
-          stopCurrentAudio();
-          const model = getActiveLive2DModel();
-          const audio = new Audio(
-            /^https?:\/\//i.test(targetUrl) || targetUrl.startsWith("blob:") || targetUrl.startsWith("data:")
-              ? targetUrl
-              : buildBackendUrl(normalizedBackendUrl, targetUrl),
-          );
-          audio.crossOrigin = "anonymous";
-          currentAudioRef.current = audio;
-          let lipSyncCleanup: (() => void) | null = null;
-          let finished = false;
-          const finish = () => {
-            if (finished) {
-              return;
-            }
-            finished = true;
-            if (shouldRevoke) {
-              URL.revokeObjectURL(targetUrl);
-            }
-            if (currentAudioRef.current === audio) {
-              currentAudioRef.current = null;
-            }
-            audioManager.clearCurrentAudio(audio);
-            resolve();
-          };
-
-          audioManager.setCurrentAudio(audio, model, () => {
-            if (lipSyncCleanup) {
-              lipSyncCleanup();
-              lipSyncCleanup = null;
-            }
-            if (model) {
-              model._externalLipSyncValue = null;
-            }
-          });
-
-          audio.addEventListener("ended", finish, { once: true });
-          audio.addEventListener("error", finish, { once: true });
-          void audio.play()
-            .then(() => {
-              if (!isPlaybackVersionCurrent(queueVersion, playbackVersionRef.current)) {
-                finish();
-                return;
-              }
-
-              const lipSyncMode = getLipSyncPlaybackMode({
-                audioMimeType: targetMimeType,
-                audioSource: targetUrl,
-              });
-              if (model && lipSyncMode === "wav-handler" && model._wavFileHandler) {
-                model._wavFileHandler.start(targetUrl);
-              } else if (model && lipSyncMode === "realtime") {
-                lipSyncCleanup = createRealtimeLipSyncCleanup(audio, model);
-              }
-            })
-            .catch(() => finish());
-        });
-      })
-      .catch((error) => {
+  if (!speechPlaybackRef.current) {
+    speechPlaybackRef.current = createSpeechPlaybackController({
+      getContext: () => {
+        const state = useAppStore.getState();
+        return {
+          normalizedBackendUrl: speechPlaybackContextRef.current.normalizedBackendUrl,
+          ttsEnabled: state.ttsEnabled,
+          ttsProvider: state.ttsProvider,
+          ttsOverrides: speechPlaybackContextRef.current.getCurrentTtsOverrides(),
+        };
+      },
+      requestTts,
+      applyStageDirectives,
+      stopCurrentAudio: () => {
+        audioManager.stopCurrentAudioAndLipSync();
+      },
+      createAudio: (source) => new Audio(source),
+      getActiveLive2DModel,
+      buildBackendUrl,
+      audioManager: {
+        setCurrentAudio: (audio, model, cleanup) => {
+          audioManager.setCurrentAudio(audio as HTMLAudioElement, model, cleanup);
+        },
+        clearCurrentAudio: (audio) => {
+          audioManager.clearCurrentAudio(audio as HTMLAudioElement);
+        },
+      },
+      getLipSyncPlaybackMode,
+      createRealtimeLipSyncCleanup: (audio, model) => (
+        createRealtimeLipSyncCleanup(audio as HTMLAudioElement, model)
+      ),
+      createObjectUrl: (blob) => URL.createObjectURL(blob),
+      revokeObjectUrl: (source) => {
+        URL.revokeObjectURL(source);
+      },
+      onQueueError: (error) => {
         console.warn("Speech queue failed:", error);
-      });
-  }, [getCurrentTtsOverrides, normalizedBackendUrl, stopCurrentAudio]);
+      },
+    });
+  }
+  const speechPlayback = speechPlaybackRef.current;
 
   const appendLocalAssistantMessage = useCallback((
     text: string,
@@ -655,7 +590,7 @@ export function RendererCommandProvider({
 
             if (reduced.timelineUnit) {
               const unit = reduced.timelineUnit;
-              enqueueSpeech({
+              speechPlayback.enqueue({
                 text: unit.text || "",
                 audioUrl: unit.audioUrl
                   ? buildBackendUrl(normalizedBackendUrl, unit.audioUrl)
@@ -683,7 +618,7 @@ export function RendererCommandProvider({
         stopMusic,
       });
       streamingActionsRef.current = [];
-      await waitForPlaybackQueue(playbackQueueRef.current, (error) => {
+      await speechPlayback.waitForIdle((error) => {
         console.warn("Speech queue failed while finishing chat:", error);
       });
       setAiState(AiStateEnum.IDLE);
@@ -706,7 +641,7 @@ export function RendererCommandProvider({
     } finally {
       currentAbortRef.current = null;
     }
-  }, [enqueueSpeech, getCurrentTtsOverrides, normalizedBackendUrl, playMusic, setAiState, stopMusic]);
+  }, [normalizedBackendUrl, playMusic, setAiState, speechPlayback, stopMusic]);
 
   useEffect(() => {
     sendPayloadRef.current = sendPayload;
@@ -904,7 +839,7 @@ export function RendererCommandProvider({
         if (incoming.sessionId === currentSessionRef.current) {
           const audioUrl = findFirstAudioAttachmentUrl(normalizedBackendUrl, incoming);
           if (shouldSpeakRealtimeMessage(incoming, currentSessionRef.current)) {
-            enqueueSpeech({
+            speechPlayback.enqueue({
               text: audioUrl ? "" : incoming.text,
               audioUrl,
               mode: incoming.source === "push" ? "push" : "chat",
@@ -923,7 +858,7 @@ export function RendererCommandProvider({
         }
       },
     });
-  }, [createConnectionUpdateGuard, enqueueSpeech, normalizedBackendUrl]);
+  }, [createConnectionUpdateGuard, normalizedBackendUrl, speechPlayback]);
 
   const createNewSession = useCallback(async () => {
     const created = await createSession(normalizedBackendUrl);
@@ -935,14 +870,12 @@ export function RendererCommandProvider({
   const interrupt = useCallback(() => {
     currentAbortRef.current?.abort();
     currentAbortRef.current = null;
-    playbackVersionRef.current = createNextPlaybackVersion(playbackVersionRef.current);
-    playbackQueueRef.current = Promise.resolve();
+    speechPlayback.interrupt();
     useAppStore.getState().setStreamingMessage(null);
     useAppStore.getState().setConnectionState("idle");
     setAiState(AiStateEnum.INTERRUPTED);
-    stopCurrentAudio();
     stopMusic();
-  }, [setAiState, stopCurrentAudio, stopMusic]);
+  }, [setAiState, speechPlayback, stopMusic]);
 
   const switchModel = useCallback(async (modelId: string) => {
     setAiState(AiStateEnum.LOADING);
@@ -1234,9 +1167,7 @@ export function RendererCommandProvider({
     return () => {
       disposed = true;
       currentAbortRef.current?.abort();
-      playbackVersionRef.current = createNextPlaybackVersion(playbackVersionRef.current);
-      playbackQueueRef.current = Promise.resolve();
-      stopCurrentAudio();
+      speechPlayback.interrupt();
       stopMusic();
       if (eventsCleanupRef.current) {
         eventsCleanupRef.current();
@@ -1247,7 +1178,7 @@ export function RendererCommandProvider({
         reconnectTimerRef.current = null;
       }
     };
-  }, [reconnect, startEventsStream, stopCurrentAudio, stopMusic]);
+  }, [reconnect, speechPlayback, startEventsStream, stopMusic]);
 
   useEffect(() => {
     if (!manifest) {

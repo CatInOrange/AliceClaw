@@ -1,4 +1,8 @@
-export function shouldSpeakRealtimeMessage(incoming, currentSessionId) {
+export function shouldSpeakRealtimeMessage(incoming, currentSessionId, isRealtimeEvent = true) {
+  if (!isRealtimeEvent) {
+    return false;
+  }
+
   if (!incoming?.sessionId || incoming.sessionId !== currentSessionId) {
     return false;
   }
@@ -6,7 +10,11 @@ export function shouldSpeakRealtimeMessage(incoming, currentSessionId) {
   return incoming.source === "push";
 }
 
-export function shouldFocusRealtimeSession(incoming, currentSessionId) {
+export function shouldFocusRealtimeSession(incoming, currentSessionId, isRealtimeEvent = true) {
+  if (!isRealtimeEvent) {
+    return false;
+  }
+
   if (!incoming?.sessionId) {
     return false;
   }

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { ConnectionState, LunariaSession } from "@/domains/types";
+import { getSessionStoreUpdateForBackendUrl } from "@/runtime/session-store-utils.ts";
 
 interface SessionState {
   backendUrl: string;
@@ -23,7 +24,13 @@ export const useSessionStore = create<SessionState>()(
       currentSessionId: null,
       connectionState: "idle",
       lastEventSeq: 0,
-      setBackendUrl: (value) => set({ backendUrl: value }),
+      setBackendUrl: (value) => set((state) => (
+        getSessionStoreUpdateForBackendUrl({
+          currentBackendUrl: state.backendUrl,
+          currentLastEventSeq: state.lastEventSeq,
+          nextBackendUrl: value,
+        })
+      )),
       setSessions: (sessions) => set({ sessions }),
       setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
       setConnectionState: (value) => set({ connectionState: value }),
@@ -34,6 +41,7 @@ export const useSessionStore = create<SessionState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         backendUrl: state.backendUrl,
+        lastEventSeq: state.lastEventSeq,
       }),
     },
   ),

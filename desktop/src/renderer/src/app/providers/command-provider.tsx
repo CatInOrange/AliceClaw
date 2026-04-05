@@ -281,6 +281,7 @@ export function RendererCommandProvider({
   const normalizedBackendUrl = normalizeBaseUrl(backendUrl);
   const currentAbortRef = useRef<AbortController | null>(null);
   const eventsCleanupRef = useRef<(() => void) | null>(null);
+  const eventsReadyRef = useRef(false);
   const reconnectTimerRef = useRef<number | null>(null);
   const reconnectAttemptRef = useRef(0);
   const backendConnectionStoreRef = useRef({ activeSessionId: 0 });
@@ -794,6 +795,7 @@ export function RendererCommandProvider({
       eventsCleanupRef.current();
       eventsCleanupRef.current = null;
     }
+    eventsReadyRef.current = false;
 
     eventsCleanupRef.current = openEventsStream(normalizedBackendUrl, {
       since: useAppStore.getState().lastEventSeq,
@@ -826,6 +828,10 @@ export function RendererCommandProvider({
           return;
         }
         useAppStore.getState().setLastEventSeq(Number(event.seq || 0));
+        if (event.type === "stream.ready") {
+          eventsReadyRef.current = true;
+          return;
+        }
         if (event.type !== "message.created") {
           return;
         }
@@ -837,7 +843,7 @@ export function RendererCommandProvider({
 
         useAppStore.getState().upsertMessageForSession(incoming.sessionId, incoming);
 
-        if (shouldFocusRealtimeSession(incoming, currentSessionRef.current)) {
+        if (shouldFocusRealtimeSession(incoming, currentSessionRef.current, eventsReadyRef.current)) {
           try {
             await loadSession(incoming.sessionId, { shouldApply });
           } catch (error) {
@@ -847,7 +853,7 @@ export function RendererCommandProvider({
 
         if (incoming.sessionId === currentSessionRef.current) {
           const audioUrl = findFirstAudioAttachmentUrl(normalizedBackendUrl, incoming);
-          if (shouldSpeakRealtimeMessage(incoming, currentSessionRef.current)) {
+          if (shouldSpeakRealtimeMessage(incoming, currentSessionRef.current, eventsReadyRef.current)) {
             speechPlayback.enqueue({
               text: audioUrl ? "" : incoming.text,
               audioUrl,

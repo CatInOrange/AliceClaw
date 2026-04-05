@@ -18,6 +18,7 @@ test("shouldSpeakRealtimeMessage ignores current-session assistant messages that
         source: "chat",
       },
       "session_active",
+      true,
     ),
     false,
   );
@@ -33,8 +34,25 @@ test("shouldSpeakRealtimeMessage still allows current-session push messages", ()
         source: "push",
       },
       "session_active",
+      true,
     ),
     true,
+  );
+});
+
+test("shouldSpeakRealtimeMessage ignores historical push messages before realtime streaming is ready", () => {
+  assert.equal(
+    shouldSpeakRealtimeMessage(
+      {
+        id: "msg_2_history",
+        sessionId: "session_active",
+        role: "assistant",
+        source: "push",
+      },
+      "session_active",
+      false,
+    ),
+    false,
   );
 });
 
@@ -48,6 +66,7 @@ test("shouldFocusRealtimeSession switches to a different session for push messag
         source: "push",
       },
       "session_active",
+      true,
     ),
     true,
   );
@@ -63,6 +82,7 @@ test("shouldFocusRealtimeSession ignores push messages already in the current se
         source: "push",
       },
       "session_active",
+      true,
     ),
     false,
   );
@@ -78,6 +98,23 @@ test("shouldFocusRealtimeSession ignores non-push messages", () => {
         source: "chat",
       },
       "session_active",
+      true,
+    ),
+    false,
+  );
+});
+
+test("shouldFocusRealtimeSession ignores historical push messages before realtime streaming is ready", () => {
+  assert.equal(
+    shouldFocusRealtimeSession(
+      {
+        id: "msg_push_old",
+        sessionId: "session_push",
+        role: "assistant",
+        source: "push",
+      },
+      "session_active",
+      false,
     ),
     false,
   );

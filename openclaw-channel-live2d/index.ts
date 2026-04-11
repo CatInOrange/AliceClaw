@@ -205,7 +205,7 @@ function createBridgeServer(ctx) {
     }));
   }
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
     
     let client = null;
     ws.on('close', () => unregisterClient(client));

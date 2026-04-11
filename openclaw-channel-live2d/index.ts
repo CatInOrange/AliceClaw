@@ -206,30 +206,44 @@ function createBridgeServer(ctx) {
   }
 
   wss.on('connection', (ws, req) => {
-    
-    let client = null;
-    ws.on('close', () => unregisterClient(client));
-    ws.on('message', async (raw) => {
+    const remoteAddress = req.socket.remoteAddress || '未知IP';
     try {
-      const url = new URL(`http://${req.headers.host}${req.url}`);
+      const url = new URL(`http://${req.headers.host || 'localhost'}${req.url || ''}`);
       const token = url.searchParams.get('token');
 
       if (!token || token.length < 32 || token !== process.env.LIVE2D_SECRET) {
-        console.error(`[Live2D] Unauthorized attempt from ${req.socket.remoteAddress}`);
+        console.error(`[Live2D Security] Unauthorized connection attempt from ${req.socket.remoteAddress}`);
         ws.close(1008, 'Authentication failed');
-        return;
-      }
-      console.log(`[Live2D] Python backend connected successfully from ${req.socket.remoteAddress}`);
-      let frame;
-      try {
-        frame = JSON.parse(String(raw));
-      } catch {
-        ws.send(JSON.stringify({ type: 'chat.error', error: 'invalid_json' }));
-        return;
+        return;                    // 直接关闭连接，不继续注册事件
       }
 
-      try {
-        if (frame.type === 'bridge.register') {
+      console.log(`[Live2D] Python backend authenticated successfully from ${req.socket.remoteAddress}`);
+    } catch (err) {
+      console.error(`[Live2D] Invalid connection request from ${req.socket.remoteAddress}`);
+      ws.close(1008, 'Invalid request');
+      return;
+    }  
+    let client = null | null = null;
+    ws.on('close', () => {
+    if (client) {
+      unregisterClient(client);
+    }
+  });
+    // 消息处理
+  ws.on('message', async (raw) => {
+    let frame: any;
+
+    try {
+      frame = JSON.parse(String(raw));
+    } catch (err) {
+      console.warn(`[Live2D] 收到无效 JSON 来自 ${remoteAddress}`);
+      ws.send(JSON.stringify({ type: 'chat.error', error: 'invalid_json' }));
+      return;
+    }
+
+    try {
+      switch (frame.type) {
+        case 'bridge.register':
           client = {
             ws,
             accountId: String(ctx.accountId || 'default'),
@@ -237,33 +251,51 @@ function createBridgeServer(ctx) {
             senderName: String(frame.senderName || 'Live2D User'),
             target: String(frame.target || frame.senderId || 'desktop-user'),
           };
+
           registerClient(String(ctx.accountId || 'default'), client);
-          ws.send(JSON.stringify({ type: 'bridge.registered', target: client.target, senderId: client.senderId }));
-          return;
-        }
-        if (frame.type === 'chat.request') {
+
+          ws.send(JSON.stringify({
+            type: 'bridge.registered',
+            target: client.target,
+            senderId: client.senderId,
+          }));
+          break;
+
+        case 'chat.request':
           await processChatRequest(ws, frame);
-          return;
-        }
-        if (frame.type === 'ping') {
-          ws.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
-          return;
-        }
-        ws.send(JSON.stringify({ type: 'chat.error', requestId: frame.requestId, error: 'unsupported_frame_type' }));
-      } catch (error) {
-        ws.send(JSON.stringify({
-          type: 'chat.error',
-          requestId: frame?.requestId,
-          error: String(error?.message || error || 'bridge_error'),
-        }));
+          break;
+
+        case 'ping':
+          ws.send(JSON.stringify({ 
+            type: 'pong', 
+            ts: Date.now() 
+          }));
+          break;
+
+        default:
+          ws.send(JSON.stringify({
+            type: 'chat.error',
+            requestId: frame?.requestId,
+            error: 'unsupported_frame_type',
+          }));
       }
-    } catch (error) {
-    ws.close(1008, 'Invalid request');
-  }});
-  }
+    } catch (error: any) {
+      console.error(`[Live2D] 处理消息时发生错误 来自 ${remoteAddress}：`, error);
 
+      ws.send(JSON.stringify({
+        type: 'chat.error',
+        requestId: frame?.requestId,
+        error: error?.message || 'bridge_error',
+      }));
+    }
+  });
 
-);
+  // 可选：监听 WebSocket 错误
+  ws.on('error', (err) => {
+    console.error(`[Live2D] WebSocket 错误 来自 ${remoteAddress}：`, err);
+  });
+
+});
 
   return {
     async stop() {

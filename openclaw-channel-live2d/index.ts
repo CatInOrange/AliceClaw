@@ -206,9 +206,20 @@ function createBridgeServer(ctx) {
   }
 
   wss.on('connection', (ws) => {
+    
     let client = null;
     ws.on('close', () => unregisterClient(client));
     ws.on('message', async (raw) => {
+    try {
+      const url = new URL(`http://${req.headers.host}${req.url}`);
+      const token = url.searchParams.get('token');
+
+      if (!token || token.length < 32 || token !== process.env.LIVE2D_SECRET) {
+        console.error(`[Live2D] Unauthorized attempt from ${req.socket.remoteAddress}`);
+        ws.close(1008, 'Authentication failed');
+        return;
+      }
+      console.log(`[Live2D] Python backend connected successfully from ${req.socket.remoteAddress}`);
       let frame;
       try {
         frame = JSON.parse(String(raw));
@@ -246,8 +257,13 @@ function createBridgeServer(ctx) {
           error: String(error?.message || error || 'bridge_error'),
         }));
       }
-    });
-  });
+    } catch (error) {
+    ws.close(1008, 'Invalid request');
+  }});
+  }
+
+
+);
 
   return {
     async stop() {

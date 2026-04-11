@@ -223,7 +223,7 @@ function createBridgeServer(ctx) {
       ws.close(1008, 'Invalid request');
       return;
     }  
-    let client = null | null = null;
+    let client : any = null;
     ws.on('close', () => {
     if (client) {
       unregisterClient(client);

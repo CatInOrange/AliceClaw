@@ -22,25 +22,25 @@ export const NoOffscreenIndex = -1; // オフスクリーンが取得できな�
  */
 export enum CubismColorBlend {
   ColorBlend_None = -1,
-  ColorBlend_Normal = Live2DCubismCore.ColorBlendType_Normal,
-  ColorBlend_AddGlow = Live2DCubismCore.ColorBlendType_AddGlow,
-  ColorBlend_Add = Live2DCubismCore.ColorBlendType_Add,
-  ColorBlend_Darken = Live2DCubismCore.ColorBlendType_Darken,
-  ColorBlend_Multiply = Live2DCubismCore.ColorBlendType_Multiply,
-  ColorBlend_ColorBurn = Live2DCubismCore.ColorBlendType_ColorBurn,
-  ColorBlend_LinearBurn = Live2DCubismCore.ColorBlendType_LinearBurn,
-  ColorBlend_Lighten = Live2DCubismCore.ColorBlendType_Lighten,
-  ColorBlend_Screen = Live2DCubismCore.ColorBlendType_Screen,
-  ColorBlend_ColorDodge = Live2DCubismCore.ColorBlendType_ColorDodge,
-  ColorBlend_Overlay = Live2DCubismCore.ColorBlendType_Overlay,
-  ColorBlend_SoftLight = Live2DCubismCore.ColorBlendType_SoftLight,
-  ColorBlend_HardLight = Live2DCubismCore.ColorBlendType_HardLight,
-  ColorBlend_LinearLight = Live2DCubismCore.ColorBlendType_LinearLight,
-  ColorBlend_Hue = Live2DCubismCore.ColorBlendType_Hue,
-  ColorBlend_Color = Live2DCubismCore.ColorBlendType_Color,
+  ColorBlend_Normal = 0,
+  ColorBlend_AddGlow = 4,
+  ColorBlend_Add = 3,
+  ColorBlend_Darken = 5,
+  ColorBlend_Multiply = 6,
+  ColorBlend_ColorBurn = 7,
+  ColorBlend_LinearBurn = 8,
+  ColorBlend_Lighten = 9,
+  ColorBlend_Screen = 10,
+  ColorBlend_ColorDodge = 11,
+  ColorBlend_Overlay = 12,
+  ColorBlend_SoftLight = 13,
+  ColorBlend_HardLight = 14,
+  ColorBlend_LinearLight = 15,
+  ColorBlend_Hue = 16,
+  ColorBlend_Color = 17,
   // Cubism 5.2以前
-  ColorBlend_AddCompatible = Live2DCubismCore.ColorBlendType_AddCompatible,
-  ColorBlend_MultiplyCompatible = Live2DCubismCore.ColorBlendType_MultiplyCompatible
+  ColorBlend_AddCompatible = 1,
+  ColorBlend_MultiplyCompatible = 2
 }
 
 /**

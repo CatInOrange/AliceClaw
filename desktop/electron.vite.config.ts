@@ -7,6 +7,9 @@ import { normalizePath } from 'vite';
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    launchOptions: {
+      args: ['--no-sandbox', '--disable-gpu']
+    }
   },
   preload: {
     plugins: [externalizeDepsPlugin()],

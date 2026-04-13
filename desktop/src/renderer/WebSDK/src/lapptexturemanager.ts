@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Copyright(c) Live2D Inc. All rights reserved.
  *
@@ -6,9 +5,7 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { csmVector, iterator } from "@framework/type/csmvector";
-
-import { gl } from "./lappglmanager";
+import { LAppGlManager } from './lappglmanager';
 
 /**
  * テクスチャ管理クラス
@@ -18,20 +15,16 @@ export class LAppTextureManager {
   /**
    * コンストラクタ
    */
-  constructor() {
-    this._textures = new csmVector<TextureInfo>();
+  public constructor() {
+    this._textures = new Array<TextureInfo>();
   }
 
   /**
    * 解放する。
    */
   public release(): void {
-    for (
-      let ite: iterator<TextureInfo> = this._textures.begin();
-      ite.notEqual(this._textures.end());
-      ite.preIncrement()
-    ) {
-      gl.deleteTexture(ite.ptr().id);
+    for (let i = 0; i < this._textures.length; i++) {
+      this._glManager.getGl().deleteTexture(this._textures[i].id);
     }
     this._textures = null;
   }
@@ -49,69 +42,87 @@ export class LAppTextureManager {
     callback: (textureInfo: TextureInfo) => void
   ): void {
     // search loaded texture already
-    for (
-      let ite: iterator<TextureInfo> = this._textures.begin();
-      ite.notEqual(this._textures.end());
-      ite.preIncrement()
-    ) {
+    for (let i = 0; i < this._textures.length; i++) {
       if (
-        ite.ptr().fileName == fileName &&
-        ite.ptr().usePremultply == usePremultiply
+        this._textures[i].fileName == fileName &&
+        this._textures[i].usePremultply == usePremultiply
       ) {
         // 2回目以降はキャッシュが使用される(待ち時間なし)
         // WebKitでは同じImageのonloadを再度呼ぶには再インスタンスが必要
         // 詳細：https://stackoverflow.com/a/5024181
-        ite.ptr().img = new Image();
-        ite
-          .ptr()
-          .img.addEventListener("load", (): void => callback(ite.ptr()), {
-            passive: true,
-          });
-        ite.ptr().img.src = fileName;
+        this._textures[i].img = new Image();
+        this._textures[i].img.addEventListener(
+          'load',
+          (): void => callback(this._textures[i]),
+          {
+            passive: true
+          }
+        );
+        this._textures[i].img.src = fileName;
         return;
       }
     }
 
     // データのオンロードをトリガーにする
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.addEventListener(
-      "load",
+      'load',
       (): void => {
         // テクスチャオブジェクトの作成
-        const tex: WebGLTexture = gl.createTexture();
+        const tex: WebGLTexture = this._glManager.getGl().createTexture();
 
         // テクスチャを選択
-        gl.bindTexture(gl.TEXTURE_2D, tex);
+        this._glManager
+          .getGl()
+          .bindTexture(this._glManager.getGl().TEXTURE_2D, tex);
 
         // テクスチャにピクセルを書き込む
-        gl.texParameteri(
-          gl.TEXTURE_2D,
-          gl.TEXTURE_MIN_FILTER,
-          gl.LINEAR_MIPMAP_LINEAR
-        );
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        this._glManager
+          .getGl()
+          .texParameteri(
+            this._glManager.getGl().TEXTURE_2D,
+            this._glManager.getGl().TEXTURE_MIN_FILTER,
+            this._glManager.getGl().LINEAR_MIPMAP_LINEAR
+          );
+        this._glManager
+          .getGl()
+          .texParameteri(
+            this._glManager.getGl().TEXTURE_2D,
+            this._glManager.getGl().TEXTURE_MAG_FILTER,
+            this._glManager.getGl().LINEAR
+          );
 
         // Premult処理を行わせる
         if (usePremultiply) {
-          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+          this._glManager
+            .getGl()
+            .pixelStorei(
+              this._glManager.getGl().UNPACK_PREMULTIPLY_ALPHA_WEBGL,
+              1
+            );
         }
 
         // テクスチャにピクセルを書き込む
-        gl.texImage2D(
-          gl.TEXTURE_2D,
-          0,
-          gl.RGBA,
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
-          img
-        );
+        this._glManager
+          .getGl()
+          .texImage2D(
+            this._glManager.getGl().TEXTURE_2D,
+            0,
+            this._glManager.getGl().RGBA,
+            this._glManager.getGl().RGBA,
+            this._glManager.getGl().UNSIGNED_BYTE,
+            img
+          );
 
         // ミップマップを生成
-        gl.generateMipmap(gl.TEXTURE_2D);
+        this._glManager
+          .getGl()
+          .generateMipmap(this._glManager.getGl().TEXTURE_2D);
 
         // テクスチャをバインド
-        gl.bindTexture(gl.TEXTURE_2D, null);
+        this._glManager
+          .getGl()
+          .bindTexture(this._glManager.getGl().TEXTURE_2D, null);
 
         const textureInfo: TextureInfo = new TextureInfo();
         if (textureInfo != null) {
@@ -121,13 +132,9 @@ export class LAppTextureManager {
           textureInfo.id = tex;
           textureInfo.img = img;
           textureInfo.usePremultply = usePremultiply;
-
-          if (this._textures == null) {
-            gl.deleteTexture(tex);
-            return;
+          if (this._textures != null) {
+            this._textures.push(textureInfo);
           }
-
-          this._textures.pushBack(textureInfo);
         }
 
         callback(textureInfo);
@@ -143,11 +150,12 @@ export class LAppTextureManager {
    * 配列に存在する画像全てを解放する。
    */
   public releaseTextures(): void {
-    for (let i = 0; i < this._textures.getSize(); i++) {
-      this._textures.set(i, null);
+    for (let i = 0; i < this._textures.length; i++) {
+      this._glManager.getGl().deleteTexture(this._textures[i].id);
+      this._textures[i] = null;
     }
 
-    this._textures.clear();
+    this._textures.length = 0;
   }
 
   /**
@@ -157,13 +165,14 @@ export class LAppTextureManager {
    * @param texture 解放するテクスチャ
    */
   public releaseTextureByTexture(texture: WebGLTexture): void {
-    for (let i = 0; i < this._textures.getSize(); i++) {
-      if (this._textures.at(i).id != texture) {
+    for (let i = 0; i < this._textures.length; i++) {
+      if (this._textures[i].id != texture) {
         continue;
       }
 
-      this._textures.set(i, null);
-      this._textures.remove(i);
+      this._glManager.getGl().deleteTexture(this._textures[i].id);
+      this._textures[i] = null;
+      this._textures.splice(i, 1);
       break;
     }
   }
@@ -175,16 +184,26 @@ export class LAppTextureManager {
    * @param fileName 解放する画像ファイルパス名
    */
   public releaseTextureByFilePath(fileName: string): void {
-    for (let i = 0; i < this._textures.getSize(); i++) {
-      if (this._textures.at(i).fileName == fileName) {
-        this._textures.set(i, null);
-        this._textures.remove(i);
+    for (let i = 0; i < this._textures.length; i++) {
+      if (this._textures[i].fileName == fileName) {
+        this._glManager.getGl().deleteTexture(this._textures[i].id);
+        this._textures[i] = null;
+        this._textures.splice(i, 1);
         break;
       }
     }
   }
 
-  _textures: csmVector<TextureInfo>;
+  /**
+   * setter
+   * @param glManager
+   */
+  public setGlManager(glManager: LAppGlManager): void {
+    this._glManager = glManager;
+  }
+
+  _textures: Array<TextureInfo>;
+  private _glManager: LAppGlManager;
 }
 
 /**

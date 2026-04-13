@@ -162,6 +162,19 @@ export const useLive2DModel = ({
                 (window as any).LAppLive2DManager.releaseInstance();
               }
               initializeLive2D();
+              console.log("helloworld");
+                setTimeout(() => {
+                  const adapter = (window as any).getLAppAdapter?.();
+                  const model = adapter?.getModel();
+                  if (model && model.setParameterValueById) {
+                    // 设置 Param13 = 1
+                    const paramId = (window as any).CubismFramework?.getIdManager?.().getId("Param13");
+                    if (paramId) {
+                      model.setParameterValueById(paramId, 1);
+                      console.log("Param13 已设置为 1");
+                    }
+                  }
+                }, 100); // 延迟一下确保模型加载完成
             },
           });
         }

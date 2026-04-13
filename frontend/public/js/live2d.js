@@ -487,7 +487,7 @@ export function createLive2DController({ refs, layout, saveLayout, setStatus }) 
       const localX = event.clientX - rect.left;
       const localY = event.clientY - rect.top;
 
-      applyFocusAtLocal(localX, localY);
+      //applyFocusAtLocal(localX, localY);
     });
     canvas.addEventListener('pointerleave', () => resetFocus());
     window.addEventListener('mouseout', resetIfPointerLeavesViewport);

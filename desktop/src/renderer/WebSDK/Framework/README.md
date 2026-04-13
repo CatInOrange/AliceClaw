@@ -17,26 +17,24 @@ You can use it as a JavaScript library that can be used in the browser by buildi
 Please check the [license](LICENSE.md) before using this SDK.
 
 
-## Compatibility with Cubism 5 new features and previous Cubism SDK versions
+## Compatibility with Cubism 5.3 new features and previous Cubism SDK versions
 
-This SDK is compatible with Cubism 5.
-
-For SDK compatibility with new features in Cubism 5 Editor, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/cubism-5-new-functions/).
-
-For compatibility with previous versions of Cubism SDK, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/compatibility-with-cubism-5/).
+This SDK is compatible with Cubism 5.3.
+For SDK compatibility with new features in Cubism 5.3 Editor, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/cubism-5-3-new-functions/).
+For compatibility with previous versions of Cubism SDK, please refer to [here](https://docs.live2d.com/en/cubism-sdk-manual/compatibility-with-cubism-5-3/).
 
 
 ## Development environment
 
 ### Node.js
 
-* 21.7.1
-* 20.11.1
+* 25.8.2
+* 24.14.1
 
 
 ### TypeScript
 
-5.4.2
+5.9.3
 
 
 ## Development environment construction
@@ -69,13 +67,13 @@ You can change the settings by editing `tsconfig.json`.
 
 Performs static analysis of TypeScript files in the `src` directory.
 
-You can change the settings by editing `.eslintrc.yml`.
+You can change the settings by editing `eslint.config.mjs`.
 
 ### `npm: lint:fix`
 
 Performs static analysis and automatic modification of TypeScript files in the `src` directory.
 
-You can change the settings by editing `.eslintrc.yml`.
+You can change the settings by editing `eslint.config.mjs`.
 
 ### `npm: clean`
 

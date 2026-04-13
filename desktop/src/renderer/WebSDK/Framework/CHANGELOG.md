@@ -5,6 +5,182 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [5-r.5] - 2026-04-02
+
+### Added
+
+* Add functionality to change motion calculation order.
+* Add `cubismlook` class that implements the target tracking feature.
+  * The target tracking feature can now specify parameter IDs through the `Framework`.
+
+### Changed
+
+* Change multiply and screen color functions to separate class with renamed methods.
+
+### Fixed
+
+* Fix unnecessary multiply color and screen color settings in mask drawing.
+
+### Removed
+
+* Remove deprecated functions from CubismMotion:
+  * `setIsLoop()` (use `setLoop()` instead)
+  * `isLoop()` (use `getLoop()` instead)
+  * `setIsLoopFadeIn()` (use `setLoopFadeIn()` instead)
+  * `isLoopFadeIn()` (use `getLoopFadeIn()` instead)
+* Remove deprecated functions from CubismExpressionMotionManager:
+  * `getCurrentPriority()` (priority is not used in expression motion playback)
+  * `getReservePriority()` (priority is not used in expression motion playback)
+  * `setReservePriority()` (priority is not used in expression motion playback)
+  * `startMotionPriority()` (use `startMotion()` instead)
+* Remove deprecated fields from CubismExpressionMotionManager:
+  * `_currentPriority` (priority is not used in expression motion playback)
+  * `_reservePriority` (priority is not used in expression motion playback)
+* Remove deprecated function from CubismExpressionMotion:
+  * `getFadeWeight()` (use `CubismExpressionMotionManager.getFadeWeight()` instead)
+* Remove deprecated field from CubismExpressionMotion:
+  * `_fadeWeight` (can cause bugs)
+* Remove deprecated functions from CubismModel:
+  * `getOverwriteFlagForModelCullings()` (renamed to `getOverrideFlagForModelCullings()`)
+  * `setOverwriteFlagForModelCullings()` (renamed to `setOverrideFlagForModelCullings()`)
+  * `getOverwriteFlagForDrawableCullings()` (renamed to `getOverrideFlagForDrawableCullings()`)
+  * `setOverwriteFlagForDrawableCullings()` (renamed to `setOverrideFlagForDrawableCullings()`)
+
+
+## [5-r.5-beta.3.1] - 2026-02-19
+
+### Fixed
+
+* Fix a bug where rendering results were not as expected when using Blend mode on semi-transparent objects.
+* Fix a bug where the `stopAllMotions()` function in the `CubismMotionQueueManager` class did not work correctly.
+
+
+## [5-r.5-beta.3] - 2026-01-29
+
+### Changed
+
+* Replace standard `Array`, `Map`, and `String` with `csmVector`, `csmMap`, and `csmString`.
+* Change to allow shader files to be specified outside the `CubismFramework`.
+* Change the shader strings written in the `CubismShader_WebGL` class to use external files.
+
+### Fixed
+
+* Fix the operation of `CubismOffscreenRenderTargetManager` to be more efficient.
+* Fix the timing of beforeDrawModelRenderTarget call.
+
+
+## [5-r.5-beta.2] - 2025-10-14
+
+### Added
+
+* Add classes `CubismOffscreenRenderTarget_WebGL` and `CubismOffscreenManager` that reuse `WebGLFramebuffer` for Offscreen drawing.
+* Add `getMocVersionFromBuffer()`function.
+  * Support for retrieving MOC version from unsupported new MOC3 files.
+
+### Removed
+
+* Remove unnecessary classes and variables.
+
+
+## [5-r.5-beta.1] - 2025-08-26
+
+### Added
+
+* Add `cubismrendertarget_webgl.ts`.
+  * Define a class `CubismRenderTarget_WebGL` that manages the frame buffer and color buffer.
+* Add support for Blend mode and Offscreen drawing.
+
+### Changed
+
+* Change the rendering context requirement in WebGL environments to `WebGL2RenderingContext`.
+  * In particular, when using the blend modes added in Cubism 5.3 and later, `WebGL2RenderingContext.blitFramebuffer()` is used.
+* Change the clipping mask processing uses class `CubismRenderTarget_WebGL`.
+* Change the API called to retrieve the drawable render order from `getDrawableRenderOrders()` to `getRenderOrders()` in CubismCore.
+  * See `CHANGELOG.md` in Core.
+
+
+## [5-r.4] - 2025-05-15
+
+### Added
+
+* Add parameter repeat processing that connects the right and left ends of the parameter to create a loop, allowing the motion to repeat.
+  * Add the variable `_isOverriddenParameterRepeat` to the `CubismModel` class for managing parameter repeat flags at the model level.
+  * Add the variable `_userParameterRepeatDataList` to the `CubismModel` class for managing parameter repeat flags for each parameter.
+* Add a `getPartParentPartIndices()` function.
+* Add a flag to the arguments of the following methods to enable the function that verifies the consistency of `motion3.json`:
+  * `CubismUserModel.loadMotion()`
+  * `CubismMotion.create()`
+  * `CubismMotion.parse()`
+
+### Fixed
+
+* Fix an issue with detecting the end of playback when looping motion.
+
+
+## [5-r.3] - 2025-02-18
+
+### Added
+
+* Add new motion loop processing that seamlessly connects the start and end points of the loop.
+  * The `_isLoop` variable was moved from class `CubismMotion` to class `ACubismMotion`.
+  * Add the setter for `_isLoop`, `setLoop()`, to class `ACubismMotion`.
+  * Add the getter for `_isLoop`, `getLoop()`, to class `ACubismMotion`.
+  * The `_isLoopFadeIn` variable was moved from class `CubismMotion` to class `ACubismMotion`.
+  * Add the setter for `_isLoopFadeIn`, `setLoopFadeIn()`, to class `ACubismMotion`.
+  * Add the getter for `_isLoopFadeIn`, `getLoopFadeIn()`, to class `ACubismMotion`.
+  * Add a variable `_motionBehavior` for version control to the `CubismMotion` class.
+
+### Changed
+
+* Change ESLint version to `9.17.0`.
+  * With this update, we have added the eslint.confing.mjs required for FlatConfig.
+
+### Deprecated
+* Deprecate the following elements due to the change in the variable declaration location.
+  * `CubismMotion.setIsLoop()`
+  * `CubismMotion.isLoop()`
+  * `CubismMotion.setIsLoopFadeIn()`
+  * `CubismMotion.isLoopFadeIn()`
+
+## [5-r.2] - 2024-12-19
+
+### Added
+
+* Add the functionality to call a function when motion playback starts.
+* Add an API to `CubismMotionJson` for verifying the consistency of `motion3.json`. by [@pillowtrucker](https://github.com/Live2D/CubismNativeFramework/pull/57)
+  * This API is ported from `Cubism Native Framework`.
+
+### Changed
+
+* Change to create and manage a `CubismShader` for each `GLRenderingContext`.
+* Change the access level of the private members in `CubismModelSettingJson` class to protected.
+* Move JSON key strings set to the member variables of `CubismModelSettingJson` class.
+* Change `FrequestNode` to be exported as part of the module.
+* Change to permit to overwrite motion fade by the value specified in .model3.json on `CubismUserModel.loadMotion()`.
+* Change the value of pi used in the calculation of `CubismBreath.updateParameters()` to `Math.PI`.
+
+### Deprecated
+
+* Deprecate the following elements because a priority value is not actually used during expression motion playback:
+  * `CubismExpressionMotionManager._currentPriority`
+  * `CubismExpressionMotionManager._reservePriority`
+  * `CubismExpressionMotionManager.startMotionPriority()`
+  * `CubismExpressionMotionManager.getCurrentPriority()`
+  * `CubismExpressionMotionManager.getReservePriority()`
+  * `CubismExpressionMotionManager.setReservePriority()`
+
+  Please use the `CubismMotionQueueManager.startMotion()` instead of `CubismExpressionMotionManager.startMotionPriority()`.
+
+
+### Fixed
+
+* Fix an issue where already registered keys could be added on `csmMap.appendKey()`.
+* Fix a bug that caused an error when playing `CubismExpresionMotion` with `CubismMotionQueueManager.startMotion()`.
+* Fix an issue where `CubismMath.cardanoAlgorithmForBezier()` was using a different function than Cubism SDK for Native.
+* Fix a potential problem with division by 0 when a pose fade time is set to 0 seconds.
+* Fix an issue where `CubismPose._fadeTimeSeconds` does not become 0.
+
+
 ## [5-r.1] - 2024-03-26
 
 ### Added
@@ -13,6 +189,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+* Change an expression "overwrite" to "override" for multiply color, screen color, and culling to adapt the actual behavior.
 * Change the weight value in `Expression` from `CubismExpressionMotion` to have it in the `CubismExpressionMotionManager`.
 * Reorganize the names of some functions and variables.
   * This is a change that depends on fixing `eslintrc.yml`.
@@ -256,6 +433,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * Reformat code using Prettier and ESLint.
 
 
+[5-r.5]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.3.1...5-r.5
+[5-r.5-beta.3.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.3...5-r.5-beta.3.1
+[5-r.5-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.2...5-r.5-beta.3
+[5-r.5-beta.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.5-beta.1...5-r.5-beta.2
+[5-r.5-beta.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.4...5-r.5-beta.1
+[5-r.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.3...5-r.4
+[5-r.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.2...5-r.3
+[5-r.2]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1...5-r.2
 [5-r.1]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.4...5-r.1
 [5-r.1-beta.4]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.3...5-r.1-beta.4
 [5-r.1-beta.3]: https://github.com/Live2D/CubismWebFramework/compare/5-r.1-beta.2...5-r.1-beta.3

@@ -7,9 +7,7 @@
 
 import { ACubismMotion } from './acubismmotion';
 import { CubismMotionQueueEntry } from './cubismmotionqueueentry';
-import { csmVector, iterator } from '../type/csmvector';
 import { CubismModel } from '../model/cubismmodel';
-import { csmString } from '../type/csmstring';
 
 /**
  * モーション再生の管理
@@ -28,17 +26,17 @@ export class CubismMotionQueueManager {
     this._userTimeSeconds = 0.0;
     this._eventCallBack = null;
     this._eventCustomData = null;
-    this._motions = new csmVector<CubismMotionQueueEntry>();
+    this._motions = new Array<CubismMotionQueueEntry>();
   }
 
   /**
    * デストラクタ
    */
   public release(): void {
-    for (let i = 0; i < this._motions.getSize(); ++i) {
-      if (this._motions.at(i)) {
-        this._motions.at(i).release();
-        this._motions.set(i, null);
+    for (let i = 0; i < this._motions.length; ++i) {
+      if (this._motions[i]) {
+        this._motions[i].release();
+        this._motions[i] = null;
       }
     }
 
@@ -67,8 +65,8 @@ export class CubismMotionQueueManager {
     let motionQueueEntry: CubismMotionQueueEntry = null;
 
     // 既にモーションがあれば終了フラグを立てる
-    for (let i = 0; i < this._motions.getSize(); ++i) {
-      motionQueueEntry = this._motions.at(i);
+    for (let i = 0; i < this._motions.length; ++i) {
+      motionQueueEntry = this._motions[i];
       if (motionQueueEntry == null) {
         continue;
       }
@@ -80,7 +78,7 @@ export class CubismMotionQueueManager {
     motionQueueEntry._autoDelete = autoDelete;
     motionQueueEntry._motion = motion;
 
-    this._motions.pushBack(motionQueueEntry);
+    this._motions.push(motionQueueEntry);
 
     return motionQueueEntry._motionQueueEntryHandle;
   }
@@ -94,15 +92,11 @@ export class CubismMotionQueueManager {
     // ------- 処理を行う -------
     // 既にモーションがあれば終了フラグを立てる
 
-    for (
-      let ite: iterator<CubismMotionQueueEntry> = this._motions.begin();
-      ite.notEqual(this._motions.end());
-
-    ) {
-      let motionQueueEntry: CubismMotionQueueEntry = ite.ptr();
+    for (let i = 0; i < this._motions.length; ) {
+      let motionQueueEntry: CubismMotionQueueEntry = this._motions[i];
 
       if (motionQueueEntry == null) {
-        ite = this._motions.erase(ite); // 削除
+        this._motions.splice(i, 1); // 削除
         continue;
       }
 
@@ -111,7 +105,7 @@ export class CubismMotionQueueManager {
       if (motion == null) {
         motionQueueEntry.release();
         motionQueueEntry = null;
-        ite = this._motions.erase(ite); // 削除
+        this._motions.splice(i, 1); // 削除
         continue;
       }
 
@@ -119,7 +113,7 @@ export class CubismMotionQueueManager {
       if (!motionQueueEntry.isFinished()) {
         return false;
       } else {
-        ite.preIncrement();
+        i++;
       }
     }
 
@@ -135,12 +129,8 @@ export class CubismMotionQueueManager {
   public isFinishedByHandle(
     motionQueueEntryNumber: CubismMotionQueueEntryHandle
   ): boolean {
-    for (
-      let ite: iterator<CubismMotionQueueEntry> = this._motions.begin();
-      ite.notEqual(this._motions.end());
-      ite.increment()
-    ) {
-      const motionQueueEntry: CubismMotionQueueEntry = ite.ptr();
+    for (let i = 0; i < this._motions.length; i++) {
+      const motionQueueEntry: CubismMotionQueueEntry = this._motions[i];
 
       if (motionQueueEntry == null) {
         continue;
@@ -163,23 +153,19 @@ export class CubismMotionQueueManager {
     // ------- 処理を行う -------
     // 既にモーションがあれば終了フラグを立てる
 
-    for (
-      let ite: iterator<CubismMotionQueueEntry> = this._motions.begin();
-      ite.notEqual(this._motions.end());
-
-    ) {
-      let motionQueueEntry: CubismMotionQueueEntry = ite.ptr();
+    for (let i = 0; i < this._motions.length; i++) {
+      const motionQueueEntry: CubismMotionQueueEntry = this._motions[i];
 
       if (motionQueueEntry == null) {
-        ite = this._motions.erase(ite);
+        this._motions.splice(i, 1); // 削除
 
         continue;
       }
 
       // ----- 終了済みの処理があれば削除する ------
       motionQueueEntry.release();
-      motionQueueEntry = null;
-      ite = this._motions.erase(ite); // 削除
+      this._motions.splice(i, 1); // 削除
+      continue;
     }
   }
 
@@ -189,9 +175,9 @@ export class CubismMotionQueueManager {
    * CubismMotionQueueEntryの配列を取得する。
    *
    * @return  CubismMotionQueueEntryの配列へのポインタ
-   * @retval  NULL   見つからなかった
+   *          NULL   見つからなかった
    */
-  public getCubismMotionQueueEntries(): csmVector<CubismMotionQueueEntry> {
+  public getCubismMotionQueueEntries(): Array<CubismMotionQueueEntry> {
     return this._motions;
   }
 
@@ -206,12 +192,9 @@ export class CubismMotionQueueManager {
     motionQueueEntryNumber: any
   ): CubismMotionQueueEntry {
     //------- 処理を行う -------
-    for (
-      let ite: iterator<CubismMotionQueueEntry> = this._motions.begin();
-      ite.notEqual(this._motions.end());
-      ite.preIncrement()
-    ) {
-      const motionQueueEntry: CubismMotionQueueEntry = ite.ptr();
+
+    for (let i = 0; i < this._motions.length; i++) {
+      const motionQueueEntry: CubismMotionQueueEntry = this._motions[i];
 
       if (motionQueueEntry == null) {
         continue;
@@ -253,15 +236,11 @@ export class CubismMotionQueueManager {
     // ------- 処理を行う --------
     // 既にモーションがあれば終了フラグを立てる
 
-    for (
-      let ite: iterator<CubismMotionQueueEntry> = this._motions.begin();
-      ite.notEqual(this._motions.end());
-
-    ) {
-      let motionQueueEntry: CubismMotionQueueEntry = ite.ptr();
+    for (let i = 0; i < this._motions.length; ) {
+      let motionQueueEntry: CubismMotionQueueEntry = this._motions[i];
 
       if (motionQueueEntry == null) {
-        ite = this._motions.erase(ite); // 削除
+        this._motions.splice(i, 1); // 削除
         continue;
       }
 
@@ -270,8 +249,7 @@ export class CubismMotionQueueManager {
       if (motion == null) {
         motionQueueEntry.release();
         motionQueueEntry = null;
-        ite = this._motions.erase(ite); // 削除
-
+        this._motions.splice(i, 1); // 削除
         continue;
       }
 
@@ -280,14 +258,14 @@ export class CubismMotionQueueManager {
       updated = true;
 
       // ------ ユーザトリガーイベントを検査する ----
-      const firedList: csmVector<csmString> = motion.getFiredEvent(
+      const firedList: Array<string> = motion.getFiredEvent(
         motionQueueEntry.getLastCheckEventSeconds() -
           motionQueueEntry.getStartTime(),
         userTimeSeconds - motionQueueEntry.getStartTime()
       );
 
-      for (let i = 0; i < firedList.getSize(); ++i) {
-        this._eventCallBack(this, firedList.at(i), this._eventCustomData);
+      for (let i = 0; i < firedList.length; ++i) {
+        this._eventCallBack(this, firedList[i], this._eventCustomData);
       }
 
       motionQueueEntry.setLastCheckEventSeconds(userTimeSeconds);
@@ -296,7 +274,7 @@ export class CubismMotionQueueManager {
       if (motionQueueEntry.isFinished()) {
         motionQueueEntry.release();
         motionQueueEntry = null;
-        ite = this._motions.erase(ite); // 削除
+        this._motions.splice(i, 1); // 削除
       } else {
         if (motionQueueEntry.isTriggeredFadeOut()) {
           motionQueueEntry.startFadeOut(
@@ -304,7 +282,7 @@ export class CubismMotionQueueManager {
             userTimeSeconds
           );
         }
-        ite.preIncrement();
+        i++;
       }
     }
 
@@ -312,7 +290,7 @@ export class CubismMotionQueueManager {
   }
   _userTimeSeconds: number; // デルタ時間の積算値[秒]
 
-  _motions: csmVector<CubismMotionQueueEntry>; // モーション
+  _motions: Array<CubismMotionQueueEntry>; // モーション
   _eventCallBack: CubismMotionEventFunction; // コールバック関数
   _eventCustomData: any; // コールバックに戻されるデータ
 }
@@ -326,11 +304,7 @@ export class CubismMotionQueueManager {
  * @param customData   コールバックに返される登録時に指定されたデータ
  */
 export interface CubismMotionEventFunction {
-  (
-    caller: CubismMotionQueueManager,
-    eventValue: csmString,
-    customData: any
-  ): void;
+  (caller: CubismMotionQueueManager, eventValue: string, customData: any): void;
 }
 
 /**

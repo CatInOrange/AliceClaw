@@ -772,13 +772,15 @@ export class CubismRenderer_WebGL extends CubismRenderer {
       return;
     }
 
+    let shader = CubismShaderManager_WebGL.getInstance().getShader(this.gl);
+    if (!shader) {
+      CubismShaderManager_WebGL.getInstance().setGlContext(this.gl);
+      shader = CubismShaderManager_WebGL.getInstance().getShader(this.gl);
+    }
     if (
-      CubismShaderManager_WebGL.getInstance().getShader(this.gl)._shaderSets
-        .length == 0 ||
-      !CubismShaderManager_WebGL.getInstance().getShader(this.gl)
-        ._isShaderLoaded
+      shader._shaderSets.length == 0 ||
+      !shader._isShaderLoaded
     ) {
-      const shader = CubismShaderManager_WebGL.getInstance().getShader(this.gl);
       if (shaderPath != null) {
         shader.setShaderPath(shaderPath);
       }

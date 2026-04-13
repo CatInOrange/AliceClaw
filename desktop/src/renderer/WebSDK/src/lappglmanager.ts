@@ -5,37 +5,78 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
+export let canvas: HTMLCanvasElement | null = null;
+export let gl: WebGLRenderingContext | null = null;
+export let s_instance: LAppGlManager | null = null;
+import { resolveActiveLive2DCanvas } from "../../src/runtime/live2d-canvas-binding-utils.ts";
+import { resolveLive2DGlContext } from "../../src/runtime/live2d-gl-context-utils.ts";
 /**
  * Cubism SDKのサンプルで使用するWebGLを管理するクラス
  */
 export class LAppGlManager {
-  public constructor() {
-    this._gl = null;
+  /**
+   * クラスのインスタンス（シングルトン）を返す。
+   * インスタンスが生成されていない場合は内部でインスタンスを生成する。
+   *
+   * @return クラスのインスタンス
+   */
+  public static getInstance(): LAppGlManager {
+    if (s_instance == null) {
+      s_instance = new LAppGlManager();
+    }
+
+    s_instance.bindCanvas();
+
+    return s_instance;
   }
 
-  public initialize(canvas: HTMLCanvasElement): boolean {
-    // glコンテキストを初期化
-    this._gl = canvas.getContext('webgl2');
-
-    if (!this._gl) {
-      // gl初期化失敗
-      alert('Cannot initialize WebGL. This browser does not support.');
-      this._gl = null;
-      // document.body.innerHTML =
-      //   'This browser does not support the <code>&lt;canvas&gt;</code> element.';
-      return false;
+  /**
+   * クラスのインスタンス（シングルトン）を解放する。
+   */
+  public static releaseInstance(): void {
+    if (s_instance != null) {
+      s_instance.release();
     }
-    return true;
+
+    s_instance = null;
+  }
+
+  constructor() {
+    this.bindCanvas();
+  }
+
+  private bindCanvas(): void {
+    const nextCanvas = document.getElementById('canvas') as HTMLCanvasElement | null;
+    const activeCanvas = resolveActiveLive2DCanvas({
+      currentCanvas: canvas,
+      nextCanvas,
+    });
+
+    if (!activeCanvas) {
+      canvas = null;
+      gl = null;
+      console.warn("Canvas element not found during LAppGlManager initialization");
+      return;
+    }
+
+    if (canvas !== activeCanvas || !gl) {
+      canvas = activeCanvas;
+      gl = resolveLive2DGlContext(canvas);
+    }
+
+    if (!gl) {
+      // gl初期化失敗
+      alert("Cannot initialize WebGL. This browser does not support.");
+      document.body.innerHTML =
+        "This browser does not support the <code>&lt;canvas&gt;</code> element.";
+    }
   }
 
   /**
    * 解放する。
    */
-  public release(): void {}
-
-  public getGl(): WebGLRenderingContext | WebGL2RenderingContext {
-    return this._gl;
+  public release(): void {
+    canvas = null;
+    gl = null;
   }
-
-  private _gl: WebGLRenderingContext | WebGL2RenderingContext = null;
 }

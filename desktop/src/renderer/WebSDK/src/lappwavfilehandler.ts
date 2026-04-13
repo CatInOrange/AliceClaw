@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Copyright(c) Live2D Inc. All rights reserved.
  *
@@ -5,10 +6,39 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { IParameterProvider } from '@framework/motion/iparameterprovider';
+/** @deprecated この変数は getInstance() が非推奨になったことに伴い、非推奨となりました。 */
+export let s_instance: LAppWavFileHandler | null = null;
 
-export class LAppWavFileHandler extends IParameterProvider {
-  public update(deltaTimeSeconds?: number): boolean {
+export class LAppWavFileHandler {
+  /**
+   * クラスのインスタンス（シングルトン）を返す。
+   * インスタンスが生成されていない場合は内部でインスタンスを生成する。
+   *
+   * @return クラスのインスタンス
+   * @deprecated このクラスでのシングルトンパターンの使用は非推奨となりました。代わりに new LAppWavFileHandler() を使用してください。
+   */
+  public static getInstance(): LAppWavFileHandler {
+    if (s_instance == null) {
+      s_instance = new LAppWavFileHandler();
+    }
+
+    return s_instance;
+  }
+
+  /**
+   * クラスのインスタンス（シングルトン）を解放する。
+   *
+   * @deprecated この関数は getInstance() が非推奨になったことに伴い、非推奨となりました。
+   */
+  public static releaseInstance(): void {
+    if (s_instance != null) {
+      s_instance = void 0 as unknown as LAppWavFileHandler | null;
+    }
+
+    s_instance = null;
+  }
+
+  public update(deltaTimeSeconds: number) {
     let goalOffset: number;
     let rms: number;
 
@@ -21,9 +51,8 @@ export class LAppWavFileHandler extends IParameterProvider {
       return false;
     }
 
-    // 経過時間後の状態を保持 (deltaTimeSecondsがundefinedの場合は60fpsを想定)
-    const actualDeltaTime: number = deltaTimeSeconds ?? 1.0 / 60.0;
-    this._userTimeSeconds += actualDeltaTime;
+    // 経過時間後の状態を保持
+    this._userTimeSeconds += deltaTimeSeconds;
     goalOffset = Math.floor(
       this._userTimeSeconds * this._wavFileInfo._samplingRate
     );
@@ -69,21 +98,12 @@ export class LAppWavFileHandler extends IParameterProvider {
     this.loadWavFile(filePath);
   }
 
-  /**
-   * Get parameter value for lip sync.
-   *
-   * @return RMS value from audio
-   */
-  public getParameter(): number {
-    return this.getRms();
-  }
-
   public getRms(): number {
     return this._lastRms;
   }
 
   public loadWavFile(filePath: string): Promise<boolean> {
-    return new Promise(resolveValue => {
+    return new Promise((resolveValue) => {
       let ret = false;
 
       if (this._pcmData != null) {
@@ -92,7 +112,7 @@ export class LAppWavFileHandler extends IParameterProvider {
 
       // ファイルロード
       const asyncFileLoad = async () => {
-        return fetch(filePath).then(responce => {
+        return fetch(filePath).then((responce) => {
           return responce.arrayBuffer();
         });
       };
@@ -119,19 +139,19 @@ export class LAppWavFileHandler extends IParameterProvider {
 
         try {
           // シグネチャ "RIFF"
-          if (!this._byteReader.getCheckSignature('RIFF')) {
+          if (!this._byteReader.getCheckSignature("RIFF")) {
             ret = false;
             throw new Error('Cannot find Signeture "RIFF".');
           }
           // ファイルサイズ-8（読み飛ばし）
           this._byteReader.get32LittleEndian();
           // シグネチャ "WAVE"
-          if (!this._byteReader.getCheckSignature('WAVE')) {
+          if (!this._byteReader.getCheckSignature("WAVE")) {
             ret = false;
             throw new Error('Cannot find Signeture "WAVE".');
           }
           // シグネチャ "fmt "
-          if (!this._byteReader.getCheckSignature('fmt ')) {
+          if (!this._byteReader.getCheckSignature("fmt ")) {
             ret = false;
             throw new Error('Cannot find Signeture "fmt".');
           }
@@ -140,7 +160,7 @@ export class LAppWavFileHandler extends IParameterProvider {
           // フォーマットIDは1（リニアPCM）以外受け付けない
           if (this._byteReader.get16LittleEndian() != 1) {
             ret = false;
-            throw new Error('File is not linear PCM.');
+            throw new Error("File is not linear PCM.");
           }
           // チャンネル数
           this._wavFileInfo._numberOfChannels =
@@ -161,7 +181,7 @@ export class LAppWavFileHandler extends IParameterProvider {
           }
           // "data"チャンクが出現するまで読み飛ばし
           while (
-            !this._byteReader.getCheckSignature('data') &&
+            !this._byteReader.getCheckSignature("data") &&
             this._byteReader._readOffset < this._byteReader._fileSize
           ) {
             this._byteReader._readOffset +=
@@ -246,9 +266,9 @@ export class LAppWavFileHandler extends IParameterProvider {
    * 指定したチャンネルから音声サンプルの配列を取得する
    *
    * @param usechannel 利用するチャンネル
-   * @return 指定したチャンネルの音声サンプルの配列
+   * @returns 指定したチャンネルの音声サンプルの配列
    */
-  public getPcmDataChannel(usechannel: number): Float32Array {
+  public getPcmDataChannel(usechannel: number): Float32Array | null {
     // 指定したチャンネル数がデータ用配列の長さより多いならnullを返す。
     if (!this._pcmData || !(usechannel < this._pcmData.length)) {
       return null;
@@ -261,9 +281,9 @@ export class LAppWavFileHandler extends IParameterProvider {
   /**
    * 音声のサンプリング周波数を取得する。
    *
-   * @return 音声のサンプリング周波数
+   * @returns 音声のサンプリング周波数
    */
-  public getWavSamplingRate(): number {
+  public getWavSamplingRate(): number | null {
     if (!this._wavFileInfo || this._wavFileInfo._samplingRate < 1) {
       return null;
     }
@@ -272,20 +292,20 @@ export class LAppWavFileHandler extends IParameterProvider {
   }
 
   public releasePcmData(): void {
-    for (
-      let channelCount = 0;
-      channelCount < this._wavFileInfo._numberOfChannels;
-      channelCount++
-    ) {
-      this._pcmData[channelCount] = null;
+    if (this._pcmData) {
+      for (
+        let channelCount = 0;
+        channelCount < this._wavFileInfo._numberOfChannels;
+        channelCount++
+      ) {
+        this._pcmData[channelCount] = undefined as unknown as Float32Array;
+      }
+      this._pcmData = null as unknown as Array<Float32Array>;
     }
-    delete this._pcmData;
-    this._pcmData = null;
   }
 
   constructor() {
-    super();
-    this._pcmData = null;
+    this._pcmData = null as unknown as Array<Float32Array>;
     this._userTimeSeconds = 0.0;
     this._lastRms = 0.0;
     this._sampleOffset = 0.0;
@@ -299,7 +319,7 @@ export class LAppWavFileHandler extends IParameterProvider {
   _sampleOffset: number;
   _wavFileInfo: WavFileInfo;
   _byteReader: ByteReader;
-  loadFiletoBytes = (arrayBuffer: ArrayBuffer, length: number): void => {
+  _loadFiletoBytes = (arrayBuffer: ArrayBuffer, length: number): void => {
     this._byteReader._fileByte = arrayBuffer;
     this._byteReader._fileDataView = new DataView(this._byteReader._fileByte);
     this._byteReader._fileSize = length;
@@ -308,7 +328,7 @@ export class LAppWavFileHandler extends IParameterProvider {
 
 export class WavFileInfo {
   constructor() {
-    this._fileName = '';
+    this._fileName = "";
     this._numberOfChannels = 0;
     this._bitsPerSample = 0;
     this._samplingRate = 0;
@@ -324,8 +344,8 @@ export class WavFileInfo {
 
 export class ByteReader {
   constructor() {
-    this._fileByte = null;
-    this._fileDataView = null;
+    this._fileByte = null as unknown as ArrayBuffer;
+    this._fileDataView = null as unknown as DataView;
     this._fileSize = 0;
     this._readOffset = 0;
   }
@@ -382,8 +402,8 @@ export class ByteReader {
   /**
    * @brief シグネチャの取得と参照文字列との一致チェック
    * @param[in] reference 検査対象のシグネチャ文字列
-   * @return  true    一致している
-   *          false   一致していない
+   * @retval  true    一致している
+   * @retval  false   一致していない
    */
   public getCheckSignature(reference: string): boolean {
     const getSignature: Uint8Array = new Uint8Array(4);

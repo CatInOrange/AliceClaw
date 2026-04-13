@@ -17,5 +17,8 @@
     "src/renderer/**/*.tsx",
     "src/renderer/**/*.d.ts",
     "src/renderer/WebSDK/src/**/*"
+  ],
+  "exclude": [
+    "src/renderer/WebSDK - 副本/**/*"
   ]
 }

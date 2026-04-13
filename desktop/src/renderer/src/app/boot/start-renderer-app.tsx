@@ -60,16 +60,6 @@ function installFatalErrorOverlay() {
   });
 }
 
-function loadLive2DCore() {
-  return new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "./libs/live2dcubismcore.js";
-    script.onload = () => resolve();
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
-
 export function startRendererApp() {
   if (typeof window === "undefined") {
     return;
@@ -89,17 +79,8 @@ export function startRendererApp() {
     message: i18n.t("boot.loading"),
   });
 
-  void loadLive2DCore()
-    .then(() => {
-      createRoot(document.getElementById("root")!).render(<RootApp />);
-      requestAnimationFrame(() => {
-        hideBootOverlay(document);
-      });
-    })
-    .catch(() => {
-      ensureBootOverlay(document, {
-        status: "error",
-        message: i18n.t("boot.live2dLoadFailed"),
-      });
-    });
+  createRoot(document.getElementById("root")!).render(<RootApp />);
+  requestAnimationFrame(() => {
+    hideBootOverlay(document);
+  });
 }

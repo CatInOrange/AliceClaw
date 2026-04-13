@@ -456,7 +456,7 @@ export class LAppModel extends CubismUserModel {
 
     // Layout
     const setupLayout = (): void => {
-      const layout: csmMap<string, number> = new csmMap<string, number>();
+      const layout: Map<string, number> = new Map<string, number>();
 
       if (this._modelSetting == null || this._modelMatrix == null) {
         CubismLogError("Failed to setupLayout().");

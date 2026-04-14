@@ -356,20 +356,14 @@ export class CubismUserModel {
 
   /**
    * レンダラを作成して初期化を実行する
-   * @param width レンダリングする幅
-   * @param height レンダリングする高さ
    * @param maskBufferCount バッファの生成数
    */
-  public createRenderer(
-    width: number,
-    height: number,
-    maskBufferCount = 1
-  ): void {
+  public createRenderer(maskBufferCount = 4): void {
     if (this._renderer) {
       this.deleteRenderer();
     }
 
-    this._renderer = new CubismRenderer_WebGL(width, height);
+    this._renderer = new CubismRenderer_WebGL();
     this._renderer.initialize(this._model, maskBufferCount);
   }
 

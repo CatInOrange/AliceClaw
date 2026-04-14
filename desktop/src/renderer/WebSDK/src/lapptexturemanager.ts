@@ -6,8 +6,6 @@
  * that can be found at https://www.live2d.com/eula/live2d-open-software-license-agreement_en.html.
  */
 
-import { csmVector, iterator } from "@framework/type/csmvector";
-
 import { gl } from "./lappglmanager";
 
 /**
@@ -19,19 +17,15 @@ export class LAppTextureManager {
    * コンストラクタ
    */
   constructor() {
-    this._textures = new csmVector<TextureInfo>();
+    this._textures = new Array<TextureInfo>();
   }
 
   /**
    * 解放する。
    */
   public release(): void {
-    for (
-      let ite: iterator<TextureInfo> = this._textures.begin();
-      ite.notEqual(this._textures.end());
-      ite.preIncrement()
-    ) {
-      gl.deleteTexture(ite.ptr().id);
+    for (const textureInfo of this._textures) {
+      gl.deleteTexture(textureInfo.id);
     }
     this._textures = null;
   }
@@ -49,25 +43,19 @@ export class LAppTextureManager {
     callback: (textureInfo: TextureInfo) => void
   ): void {
     // search loaded texture already
-    for (
-      let ite: iterator<TextureInfo> = this._textures.begin();
-      ite.notEqual(this._textures.end());
-      ite.preIncrement()
-    ) {
+    for (const textureInfo of this._textures) {
       if (
-        ite.ptr().fileName == fileName &&
-        ite.ptr().usePremultply == usePremultiply
+        textureInfo.fileName == fileName &&
+        textureInfo.usePremultply == usePremultiply
       ) {
         // 2回目以降はキャッシュが使用される(待ち時間なし)
         // WebKitでは同じImageのonloadを再度呼ぶには再インスタンスが必要
         // 詳細：https://stackoverflow.com/a/5024181
-        ite.ptr().img = new Image();
-        ite
-          .ptr()
-          .img.addEventListener("load", (): void => callback(ite.ptr()), {
-            passive: true,
-          });
-        ite.ptr().img.src = fileName;
+        textureInfo.img = new Image();
+        textureInfo.img.addEventListener("load", (): void => callback(textureInfo), {
+          passive: true,
+        });
+        textureInfo.img.src = fileName;
         return;
       }
     }
@@ -127,7 +115,7 @@ export class LAppTextureManager {
             return;
           }
 
-          this._textures.pushBack(textureInfo);
+          this._textures.push(textureInfo);
         }
 
         callback(textureInfo);
@@ -143,11 +131,11 @@ export class LAppTextureManager {
    * 配列に存在する画像全てを解放する。
    */
   public releaseTextures(): void {
-    for (let i = 0; i < this._textures.getSize(); i++) {
-      this._textures.set(i, null);
+    for (let i = 0; i < this._textures.length; i++) {
+      this._textures[i] = null;
     }
 
-    this._textures.clear();
+    this._textures = [];
   }
 
   /**
@@ -157,13 +145,13 @@ export class LAppTextureManager {
    * @param texture 解放するテクスチャ
    */
   public releaseTextureByTexture(texture: WebGLTexture): void {
-    for (let i = 0; i < this._textures.getSize(); i++) {
-      if (this._textures.at(i).id != texture) {
+    for (let i = 0; i < this._textures.length; i++) {
+      if (this._textures[i].id != texture) {
         continue;
       }
 
-      this._textures.set(i, null);
-      this._textures.remove(i);
+      this._textures[i] = null;
+      this._textures.splice(i, 1);
       break;
     }
   }
@@ -175,16 +163,16 @@ export class LAppTextureManager {
    * @param fileName 解放する画像ファイルパス名
    */
   public releaseTextureByFilePath(fileName: string): void {
-    for (let i = 0; i < this._textures.getSize(); i++) {
-      if (this._textures.at(i).fileName == fileName) {
-        this._textures.set(i, null);
-        this._textures.remove(i);
+    for (let i = 0; i < this._textures.length; i++) {
+      if (this._textures[i].fileName == fileName) {
+        this._textures[i] = null;
+        this._textures.splice(i, 1);
         break;
       }
     }
   }
 
-  _textures: csmVector<TextureInfo>;
+  _textures: Array<TextureInfo>;
 }
 
 /**

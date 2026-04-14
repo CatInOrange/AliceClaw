@@ -1120,7 +1120,7 @@ export class LAppModel extends CubismUserModel {
     const viewport: number[] = [0, 0, canvas.width, canvas.height];
 
     this.getRenderer().setRenderState(frameBuffer, viewport);
-    this.getRenderer().drawModel();
+    this.getRenderer().drawModel(LAppDefine.ShaderPath);
   }
 
   /**

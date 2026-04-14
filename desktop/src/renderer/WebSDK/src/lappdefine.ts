@@ -34,6 +34,9 @@ export const ViewLogicalMaxTop = 2.0;
 // Dynamic resource path that will be set by the model loader
 export let ResourcesPath = "";
 
+// シェーダー相対パス
+export const ShaderPath = '../../Framework/Shaders/WebGL/';
+
 // Model directory and filename storage
 export let ModelDir: string[] = [];
 export let ModelFileNames: string[] = []; // New array to store model file names

@@ -66,7 +66,7 @@ export class LAppAdapter {
   /* expression */
 
   public getExpressionCount(): number {
-    return this.getModel()?._expressions.getSize() ?? 0;
+    return this.getModel()?._expressions?.size ?? 0;
   }
 
   public getExpressionName(index: number): string {
@@ -91,8 +91,8 @@ export class LAppAdapter {
     }
 
     this.getMgr().releaseAllModel();
-    this.getMgr()._models.pushBack(new LAppModel());
-    this.getMgr()._models.at(0)?.loadAssets(modelPath, modelJsonName);
+    this.getMgr()._models.push(new LAppModel());
+    this.getMgr()._models[0]?.loadAssets(modelPath, modelJsonName);
   }
 
   /* model position manipulation */

@@ -23,6 +23,7 @@ import {
   FinishedMotionCallback,
 } from "@framework/motion/acubismmotion";
 import { CubismMotion } from "@framework/motion/cubismmotion";
+import { CubismExpressionMotion } from "@framework/motion/cubismexpressionmotion";
 import {
   CubismMotionQueueEntryHandle,
   InvalidMotionQueueEntryHandleValue,
@@ -888,6 +889,42 @@ export class LAppModel extends CubismUserModel {
       if (this._debugMode) {
         LAppPal.printMessage(`[APP]expression[${expressionId}] is null`);
       }
+    }
+  }
+
+  /**
+   * 从 JSON 对象加载并应用初始表情
+   *
+   * @param expressionJson 表情 JSON 对象，格式如：
+   *   { Type: "Live2D Expression", Parameters: [{ Id: "Param13", Value: 1, Blend: "Add" }] }
+   */
+  public setInitialExpression(expressionJson: {
+    Type: string;
+    Parameters: Array<{ Id: string; Value: number; Blend: string }>;
+  }): void {
+    try {
+      const jsonString = JSON.stringify(expressionJson);
+      const encoder = new TextEncoder();
+      const buffer = encoder.encode(jsonString).buffer;
+
+      const motion: CubismExpressionMotion = CubismExpressionMotion.create(
+        buffer,
+        buffer.byteLength
+      ) as CubismExpressionMotion;
+
+      if (motion) {
+        // 用时间戳作为唯一的表情名称
+        const expressionName = `initialExpression_${Date.now()}`;
+        this._expressions.set(expressionName, motion);
+        this.setExpression(expressionName);
+
+        if (this._debugMode) {
+          LAppPal.printMessage(`[APP]setInitialExpression: applied ${expressionName}`);
+        }
+        console.log("[APP]setInitialExpression: applied", expressionJson);
+      }
+    } catch (e) {
+      console.error("[APP]setInitialExpression: failed", e);
     }
   }
 

@@ -166,13 +166,14 @@ export const useLive2DModel = ({
                 setTimeout(() => {
                   const adapter = (window as any).getLAppAdapter?.();
                   const model = adapter?.getModel();
-                  if (model && model.addParameterValueById) {
-                    // 设置 Param13 Add 1
-                    const paramId = (window as any).CubismFramework?.getIdManager?.().getId("Param13");
-                    if (paramId) {
-                      model.addParameterValueById(paramId, 1, 1.0);
-                      console.log("Param13 已 Add 1");
-                    }
+                  if (model && model.setInitialExpression) {
+                    // 设置初始表情 Expression
+                    model.setInitialExpression({
+                      Type: "Live2D Expression",
+                      Parameters: [
+                        { Id: "Param13", Value: 1, Blend: "Add" }
+                      ]
+                    });
                   }
                 }, 100); // 延迟一下确保模型加载完成
             },

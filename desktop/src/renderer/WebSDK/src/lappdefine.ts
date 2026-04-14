@@ -35,7 +35,7 @@ export const ViewLogicalMaxTop = 2.0;
 export let ResourcesPath = "";
 
 // シェーダー相対パス
-export const ShaderPath = '../../Shaders/WebGL/';
+export const ShaderPath = '/Framework/Shaders/WebGL/';
 
 // Model directory and filename storage
 export let ModelDir: string[] = [];

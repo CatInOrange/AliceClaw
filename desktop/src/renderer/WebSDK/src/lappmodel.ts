@@ -907,10 +907,14 @@ export class LAppModel extends CubismUserModel {
       const encoder = new TextEncoder();
       const buffer = encoder.encode(jsonString).buffer;
 
+      console.log("[APP]setInitialExpression: creating motion from JSON:", jsonString);
+
       const motion: CubismExpressionMotion = CubismExpressionMotion.create(
         buffer,
         buffer.byteLength
       ) as CubismExpressionMotion;
+
+      console.log("[APP]setInitialExpression: motion created:", motion);
 
       if (motion) {
         // 用时间戳作为唯一的表情名称
@@ -922,6 +926,8 @@ export class LAppModel extends CubismUserModel {
           LAppPal.printMessage(`[APP]setInitialExpression: applied ${expressionName}`);
         }
         console.log("[APP]setInitialExpression: applied", expressionJson);
+      } else {
+        console.error("[APP]setInitialExpression: motion was null - JSON format may be wrong");
       }
     } catch (e) {
       console.error("[APP]setInitialExpression: failed", e);

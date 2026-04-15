@@ -202,12 +202,17 @@ export function setModelPositionFromScreen(x: number, y: number): boolean {
   return true;
 }
 
-let lastPointer = {
+let lastPointer: {
+  x: number;
+  y: number;
+  buttons: number;
+} = {
   x: typeof window !== "undefined" ? window.innerWidth * 0.5 : 0,
   y: typeof window !== "undefined" ? window.innerHeight * 0.5 : 0,
+  buttons: 0,
 };
 
-export function setTrackedPointerPosition(pointer: { x: number; y: number } | null | undefined): void {
+export function setTrackedPointerPosition(pointer: { x: number; y: number; buttons?: number } | null | undefined): void {
   if (
     !pointer
     || !Number.isFinite(Number(pointer.x))
@@ -219,6 +224,7 @@ export function setTrackedPointerPosition(pointer: { x: number; y: number } | nu
   lastPointer = {
     x: Number(pointer.x),
     y: Number(pointer.y),
+    buttons: pointer.buttons ?? lastPointer.buttons,
   };
 }
 
@@ -228,6 +234,7 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
     setTrackedPointerPosition({
       x: event.clientX,
       y: event.clientY,
+      buttons: event.buttons,
     });
   });
 }

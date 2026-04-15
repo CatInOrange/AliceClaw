@@ -38,8 +38,12 @@ export function applyLive2DFocus({
     return true;
   }
 
+  // Only apply drag (gaze tracking) when left mouse button is pressed (bit 0)
+  const leftButtonPressed = pointer && (Number(pointer.buttons) & 1) !== 0;
+
   if (
-    typeof manager?.onDrag === "function"
+    leftButtonPressed
+    && typeof manager?.onDrag === "function"
     && typeof view?.transformViewX === "function"
     && typeof view?.transformViewY === "function"
   ) {

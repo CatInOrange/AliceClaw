@@ -277,7 +277,9 @@ export const useLive2DModel = ({
     const isHitOnModel = model.isHitOnModel(modelX, modelY);
     // --- End Check ---
 
-    if (hitAreaName !== null || isHitOnModel) {
+    // Only start drag sequence for right mouse button (button 2)
+    // Left button (button 0) is used for gaze tracking only
+    if ((hitAreaName !== null || isHitOnModel) && e.button === 2) {
       // Record potential tap/drag start
       mouseDownTimeRef.current = Date.now();
       mouseDownPosRef.current = { x: e.clientX, y: e.clientY }; // Use clientX/Y for distance check

@@ -25,6 +25,17 @@ export function applyLive2DFocus({
 
   const width = Number(canvasRect.width);
   const height = Number(canvasRect.height);
+  // DEBUG: log values for pet mode gaze debugging
+  console.log('[applyLive2DFocus DEBUG]', {
+    pointerX: pointer.x,
+    pointerY: pointer.y,
+    canvasRectLeft: canvasRect.left,
+    canvasRectTop: canvasRect.top,
+    canvasRectWidth: canvasRect.width,
+    canvasRectHeight: canvasRect.height,
+    windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth : 'N/A',
+    windowInnerHeight: typeof window !== 'undefined' ? window.innerHeight : 'N/A',
+  });
   // In pet mode, pointer.x is in screen/renderer coordinates (0 to renderer width),
   // while canvasRect.width is the canvas width. We need to scale pointer.x from
   // renderer coordinates to canvas coordinates.
@@ -34,6 +45,12 @@ export function applyLive2DFocus({
     0,
     width
   );
+  console.log('[applyLive2DFocus DEBUG] localX calculation:', {
+    formula: `((pointer.x - canvasRect.left) * width) / rendererWidth`,
+    raw: `(${pointer.x} - ${canvasRect.left}) * ${width} / ${rendererWidth}`,
+    result: ((Number(pointer.x) - Number(canvasRect.left || 0)) * width) / rendererWidth,
+    clamped: localX,
+  });
   const localY = clamp(Number(pointer.y) - Number(canvasRect.top || 0), 0, height);
   const headRatio = clamp(Number(config?.headRatio ?? 0.25), 0, 1);
   const headY = Number(model?.y || height * 0.5) - Number(model?.height || height) * headRatio;

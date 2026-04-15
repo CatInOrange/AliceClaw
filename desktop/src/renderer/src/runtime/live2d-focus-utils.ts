@@ -25,7 +25,15 @@ export function applyLive2DFocus({
 
   const width = Number(canvasRect.width);
   const height = Number(canvasRect.height);
-  const localX = clamp(Number(pointer.x) - Number(canvasRect.left || 0), 0, width);
+  // In pet mode, pointer.x is in screen/renderer coordinates (0 to renderer width),
+  // while canvasRect.width is the canvas width. We need to scale pointer.x from
+  // renderer coordinates to canvas coordinates.
+  const rendererWidth = typeof window !== 'undefined' ? window.innerWidth : width;
+  const localX = clamp(
+    ((Number(pointer.x) - Number(canvasRect.left || 0)) * width) / rendererWidth,
+    0,
+    width
+  );
   const localY = clamp(Number(pointer.y) - Number(canvasRect.top || 0), 0, height);
   const headRatio = clamp(Number(config?.headRatio ?? 0.25), 0, 1);
   const headY = Number(model?.y || height * 0.5) - Number(model?.height || height) * headRatio;

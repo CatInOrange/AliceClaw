@@ -161,6 +161,9 @@ def _run_bridge_listener_forever(provider_config: dict, stop_event: threading.Ev
     while not stop_event.is_set():
         try:
             asyncio.run(_bridge_listener_loop(provider_config, stop_event))
+        except (asyncio.CancelledError, ConnectionResetError, BrokenPipeError):
+            # Client disconnected - not an error, just stop
+            log_push_debug('listener.disconnected', provider_id=provider_config.get('id'))
         except Exception as exc:
             print(f'[OpenClawChannel] push listener error: {exc}')
             log_push_debug('listener.error', error=repr(exc), provider_id=provider_config.get('id'))

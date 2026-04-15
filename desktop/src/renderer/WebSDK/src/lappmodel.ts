@@ -623,6 +623,10 @@ export class LAppModel extends CubismUserModel {
     this._dragX = this._dragManager.getX();
     this._dragY = this._dragManager.getY();
 
+    // 鼠标跟踪 disabled - 目光不跟随鼠标
+    this._dragX = 0;
+    this._dragY = 0;
+
     // モーションによるパラメータ更新の有無
     let motionUpdated = false;
 

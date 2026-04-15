@@ -239,6 +239,10 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
   });
 }
 
+export function isLeftButtonPressed(): boolean {
+  return (lastPointer.buttons & 1) !== 0;
+}
+
 export function applyFocusCenter(config: FocusCenterConfig | null | undefined): void {
   const next = config || {};
   if (next.enabled === false) {

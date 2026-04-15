@@ -51,6 +51,7 @@ import {
   getLive2DInitializationStore,
   shouldContinueLive2DAssetLoad,
 } from "../../src/runtime/live2d-init-session-utils.ts";
+import { isLeftButtonPressed } from "../../src/runtime/live2d-bridge";
 
 enum LoadStep {
   LoadAssets,
@@ -622,6 +623,12 @@ export class LAppModel extends CubismUserModel {
     this._dragManager.update(deltaTimeSeconds);
     this._dragX = this._dragManager.getX();
     this._dragY = this._dragManager.getY();
+
+    // 如果左键未按下，目光重置到中心
+    if (!isLeftButtonPressed()) {
+      this._dragX = 0;
+      this._dragY = 0;
+    }
 
     // モーションによるパラメータ更新の有無
     let motionUpdated = false;

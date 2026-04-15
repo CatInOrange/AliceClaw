@@ -880,10 +880,9 @@ export class LAppModel extends CubismUserModel {
     }
 
     if (motion != null) {
-      this._expressionManager.startMotionPriority(
+      this._expressionManager.startMotion(
         motion,
-        false,
-        LAppDefine.PriorityForce
+        false
       );
     } else {
       if (this._debugMode) {

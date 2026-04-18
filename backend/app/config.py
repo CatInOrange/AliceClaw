@@ -223,4 +223,7 @@ def get_model_or_raise(model_id: str | None) -> dict:
 
 
 def get_model_dir(model_config: dict) -> Path:
-    return Path(model_config['dir']).expanduser()
+    model_dir = Path(model_config['dir']).expanduser()
+    if not model_dir.is_absolute():
+        model_dir = (ROOT / model_dir).resolve()
+    return model_dir

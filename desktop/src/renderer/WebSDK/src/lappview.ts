@@ -36,6 +36,8 @@ export class LAppView {
 
     // タッチ関係のイベント管理
     this._touchManager = new TouchManager();
+    this._touchStartX = 0;
+    this._touchStartY = 0;
 
     // デバイス座標からスクリーン座標に変換するための
     this._deviceToScreen = new CubismMatrix44();
@@ -206,6 +208,9 @@ export class LAppView {
    * @param pointY スクリーンY座標
    */
   public onTouchesBegan(pointX: number, pointY: number): void {
+    this._touchStartX = pointX;
+    this._touchStartY = pointY;
+
     this._touchManager.touchesBegan(
       pointX * window.devicePixelRatio,
       pointY * window.devicePixelRatio
@@ -219,15 +224,18 @@ export class LAppView {
    * @param pointY スクリーンY座標
    */
   public onTouchesMoved(pointX: number, pointY: number): void {
-    const viewX: number = this.transformViewX(this._touchManager.getX());
-    let viewY: number = this.transformViewY(this._touchManager.getY());
-
     this._touchManager.touchesMoved(
       pointX * window.devicePixelRatio,
       pointY * window.devicePixelRatio
     );
 
     const live2DManager: LAppLive2DManager = LAppLive2DManager.getInstance();
+    const canvasWidth = canvas?.clientWidth || canvas?.width || window.innerWidth || 1;
+    const canvasHeight = canvas?.clientHeight || canvas?.height || window.innerHeight || 1;
+    const deltaX = pointX - this._touchStartX;
+    const deltaY = pointY - this._touchStartY;
+    const dragX = Math.max(-1, Math.min(1, deltaX / (canvasWidth * 0.25)));
+    const dragY = Math.max(-1, Math.min(1, deltaY / (canvasHeight * 0.25)));
 
     fetch('/api/debug/webgl', {
       method: 'POST',
@@ -237,17 +245,23 @@ export class LAppView {
         source: 'LAppView.onTouchesMoved',
         pointX,
         pointY,
+        touchStartX: this._touchStartX,
+        touchStartY: this._touchStartY,
+        deltaX,
+        deltaY,
+        dragX,
+        dragY,
+        canvasWidth,
+        canvasHeight,
         touchManagerX: this._touchManager.getX(),
         touchManagerY: this._touchManager.getY(),
-        viewX,
-        viewY,
         devicePixelRatio: window.devicePixelRatio,
         _deviceToScreen_tr5: this._deviceToScreen?._tr?.[5] ?? 0,
         _viewMatrix_tr5: this._viewMatrix?._tr?.[5] ?? 0,
       })
     }).catch(() => {});
 
-    live2DManager.onDrag(viewX, viewY);
+    live2DManager.onDrag(dragX, dragY);
   }
 
   /**
@@ -325,6 +339,8 @@ export class LAppView {
   }
 
   _touchManager: TouchManager; // タッチマネージャー
+  _touchStartX: number;
+  _touchStartY: number;
   _deviceToScreen: CubismMatrix44; // デバイスからスクリーンへの行列
   _viewMatrix: CubismViewMatrix; // viewMatrix
   _programId: WebGLProgram; // シェーダID

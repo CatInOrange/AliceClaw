@@ -204,6 +204,10 @@ export interface SendChatBody {
 export function normalizeBaseUrl(url: string): string {
   let value = String(url || '').trim();
   if (!value) {
+    // 如果为空，使用当前页面的 origin（支持网页版动态适配）
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return window.location.origin;
+    }
     return 'http://127.0.0.1:18080';
   }
 

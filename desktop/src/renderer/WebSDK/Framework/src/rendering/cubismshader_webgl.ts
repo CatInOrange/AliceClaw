@@ -1636,7 +1636,7 @@ export class CubismShader_WebGL {
     ) {
       // ループごとにシェーダーのソースを初期化
       let vertexShaderSrc: string = '';
-      let fragmentShaderStr: string = 'precision mediump float;\n';
+      let fragmentShaderStr: string = 'precision highp float;\n';
 
       // シェーダの種類が変わるたびにインデックスを変更
       const shaderSetIndex = shaderSetBaseIndex + shaderTypeIndex;

@@ -89,6 +89,7 @@ export class CubismUserModel {
    * @param ドラッグしているカーソルのY位置
    */
   public setDragging(x: number, y: number): void {
+    console.log(`[DEBUG] CubismUserModel.setDragging called with x=${x}, y=${y}`);
     this._dragManager.set(x, y);
   }
 

@@ -38,6 +38,7 @@ import {
 import * as LAppDefine from "./lappdefine";
 import { frameBuffer, LAppDelegate } from "./lappdelegate";
 import { canvas, gl } from "./lappglmanager";
+import { reportWebGLDebug } from "@/runtime/live2d-gl-context-utils";
 import { LAppPal } from "./lapppal";
 import { TextureInfo } from "./lapptexturemanager";
 import { LAppWavFileHandler } from "./lappwavfilehandler";
@@ -51,7 +52,9 @@ import {
   getLive2DInitializationStore,
   shouldContinueLive2DAssetLoad,
 } from "../../src/runtime/live2d-init-session-utils.ts";
-import { isLeftButtonPressed } from "../../src/runtime/live2d-bridge";
+
+
+import * as Live2dBridge from "../../src/runtime/live2d-bridge";
 
 enum LoadStep {
   LoadAssets,
@@ -566,6 +569,12 @@ export class LAppModel extends CubismUserModel {
           if (this._textureCount >= textureCount) {
             // ロード完了
             this._state = LoadStep.CompleteSetup;
+            // 自动报告 WebGL 诊断信息到服务器
+            try {
+              reportWebGLDebug(gl, canvas).catch(e => console.error('WebGL debug report failed:', e));
+            } catch (e) {
+              console.error('Failed to report WebGL debug:', e);
+            }
           }
         };
 
@@ -614,6 +623,29 @@ export class LAppModel extends CubismUserModel {
   /**
    * 更新
    */
+  public getDraggingX(): number { return this._dragX; }
+  public getDraggingY(): number { return this._dragY; }
+
+  // 手指抬起时强制归零的标志
+  private _touchEndedForReset: boolean = false;
+
+  // 手指抬起时调用此方法，通知 update() 重置拖拽值
+  public resetDragOnTouchEnd(): void {
+    this._touchEndedForReset = true;
+  }
+
+  // 新的触摸开始时调用此方法，清除重置标志，允许正常拖拽
+  public clearTouchEndedFlag(): void {
+    this._touchEndedForReset = false;
+  }
+
+  public get idParamAngleX(): CubismIdHandle { return this._idParamAngleX; }
+  public get idParamAngleY(): CubismIdHandle { return this._idParamAngleY; }
+  public get idParamAngleZ(): CubismIdHandle { return this._idParamAngleZ; }
+  public get idParamEyeBallX(): CubismIdHandle { return this._idParamEyeBallX; }
+  public get idParamEyeBallY(): CubismIdHandle { return this._idParamEyeBallY; }
+  public get idParamBodyAngleX(): CubismIdHandle { return this._idParamBodyAngleX; }
+
   public update(): void {
     if (this._state != LoadStep.CompleteSetup) return;
 
@@ -624,11 +656,32 @@ export class LAppModel extends CubismUserModel {
     this._dragX = this._dragManager.getX();
     this._dragY = this._dragManager.getY();
 
-    // 如果左键未按下，目光重置到中心
-    if (!isLeftButtonPressed()) {
+    // 安全网：手指抬起后强制归零
+    // 只有当 drag 值确实接近 0 时才清除标志，否则持续重置
+    if (this._touchEndedForReset) {
       this._dragX = 0;
       this._dragY = 0;
+      // 注意：不需要调用 dragManager 的方法，因为 _dragX/_dragY 是独立的
+      // 检查 dragManager 的实际值，只有当它也接近 0 时才清除标志
+      const managerX = this._dragManager.getX();
+      const managerY = this._dragManager.getY();
+      if (Math.abs(managerX) < 0.01 && Math.abs(managerY) < 0.01) {
+        this._touchEndedForReset = false;
+        LAppDelegate.getInstance().showTouchDebug('touch ended - drag stabilized at (0,0)');
+      } else {
+        LAppDelegate.getInstance().showTouchDebug(`touch ended - forcing reset (manager: ${managerX.toFixed(2)}, ${managerY.toFixed(2)})`);
+      }
     }
+
+    // 调试：每帧显示 drag 目标值和实际值
+    const targetX = (this._dragManager as any)._faceTargetX;
+    const targetY = (this._dragManager as any)._faceTargetY;
+    const dragStr = `drag(${this._dragX.toFixed(2)},${this._dragY.toFixed(2)}) target(${targetX},${targetY})`;
+    LAppDelegate.getInstance().showTouchDebug(dragStr);
+
+    // 注意：drag 值已经在鼠标/触摸释放时通过 onDrag(0,0) 重置了
+    // 这里不需要再通过 isLeftButtonPressed() 检查来重置
+    // isLeftButtonPressed() 在触摸设备上可能不准确，会导致 gaze 无法跟随触摸
 
     // モーションによるパラメータ更新の有無
     let motionUpdated = false;

@@ -1,0 +1,52 @@
+{
+  "timestamp": "20260417_195023",
+  "data": {
+    "timestamp": "2026-04-17T11:50:22.922Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "canvas": {
+      "width": 844,
+      "height": 841,
+      "clientWidth": 844,
+      "clientHeight": 841,
+      "offsetWidth": 844,
+      "offsetHeight": 841
+    },
+    "devicePixelRatio": 1,
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "vendor": "WebKit",
+      "renderer": "WebKit WebGL"
+    },
+    "precision": {
+      "floatVertex": null,
+      "floatFragment": null,
+      "highpFloatFragment": {},
+      "mediumpFloatFragment": {},
+      "lowpFloatFragment": {}
+    },
+    "limits": {
+      "maxTextureSize": 16384,
+      "maxViewportDims": {
+        "0": 32767,
+        "1": 32767
+      },
+      "maxRenderbufferSize": 16384
+    },
+    "errors": [
+      "NO_ERROR"
+    ],
+    "textureLoadLog": [
+      "[TextureLoad] Loading: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_00.png",
+      "[TextureLoad] Loading: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_01.png",
+      "[TextureLoad] Loading: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_02.png",
+      "[TextureLoad] Loaded: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_02.png (4096x4096)",
+      "[TextureLoad] Loaded: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_00.png (4096x2048)",
+      "[TextureLoad] Loaded: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_01.png (4096x4096)"
+    ],
+    "webglUnmasked": {
+      "vendor": "Google Inc. (NVIDIA)",
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3090 (0x00002204) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    }
+  }
+}

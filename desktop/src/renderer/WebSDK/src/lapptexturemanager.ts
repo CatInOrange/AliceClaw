@@ -8,6 +8,14 @@
 
 import { gl } from "./lappglmanager";
 
+// Global texture load log for debugging
+export const textureLoadLog: string[] = [];
+
+// Expose textureLoadLog to window for access in debug utilities
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).textureLoadLog = textureLoadLog;
+}
+
 /**
  * テクスチャ管理クラス
  * 画像読み込み、管理を行うクラス。
@@ -63,9 +71,15 @@ export class LAppTextureManager {
     // データのオンロードをトリガーにする
     const img = new Image();
     img.crossOrigin = "anonymous";
+    const logMsg = `[TextureLoad] Loading: ${fileName}`;
+    console.log(logMsg);
+    textureLoadLog.push(logMsg);
     img.addEventListener(
       "load",
       (): void => {
+        const logMsg = `[TextureLoad] Loaded: ${fileName} (${img.width}x${img.height})`;
+        console.log(logMsg);
+        textureLoadLog.push(logMsg);
         // テクスチャオブジェクトの作成
         const tex: WebGLTexture = gl.createTexture();
 
@@ -122,6 +136,11 @@ export class LAppTextureManager {
       },
       { passive: true }
     );
+    img.addEventListener("error", (): void => {
+      const logMsg = `[TextureLoad] FAILED: ${fileName}`;
+      console.error(logMsg);
+      textureLoadLog.push(logMsg);
+    });
     img.src = fileName;
   }
 

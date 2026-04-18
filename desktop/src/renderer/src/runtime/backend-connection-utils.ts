@@ -1,6 +1,6 @@
 import { normalizeBaseUrl } from "../platform/backend/openclaw-api.ts";
 
-const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:18080";
+const DEFAULT_BACKEND_BASE_URL = "";  // 空字符串会触发 normalizeBaseUrl 使用 window.location.origin
 
 function toPositiveInteger(value: unknown, fallback = 0): number {
   const numeric = Number(value);

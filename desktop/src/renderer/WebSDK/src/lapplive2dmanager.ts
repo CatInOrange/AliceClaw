@@ -13,6 +13,8 @@ import * as LAppDefine from './lappdefine';
 import { canvas } from './lappglmanager';
 import { LAppModel } from './lappmodel';
 import { LAppPal } from './lapppal';
+import * as Live2dBridge from '../../src/runtime/live2d-bridge';
+import { LAppDelegate } from './lappdelegate';
 
 export let s_instance: LAppLive2DManager | null | undefined = null;
 
@@ -147,7 +149,13 @@ export class LAppLive2DManager {
 
     for (let i = 0; i < modelCount; ++i) {
       const projection: CubismMatrix44 = new CubismMatrix44();
-      const model: LAppModel = this.getModel(i);
+      const model: LAppModel | null = this.getModel(i);
+
+      // Safety check: skip if model is null
+      if (!model) {
+        model?.update();
+        continue;
+      }
 
       if (model.getModel()) {
         if (model.getModel().getCanvasWidth() > 1.0 && width < height) {
@@ -161,6 +169,46 @@ export class LAppLive2DManager {
         // 必要があればここで乗算
         if (this._viewMatrix != null) {
           projection.multiplyByMatrix(this._viewMatrix);
+        }
+
+        // Y-OFFSET fix: shift model up by 0.5 units to reveal feet
+        const modelMatrix = model.getModelMatrix().getArray();
+        modelMatrix[13] = 0.5;  // m13 is Y translation in column-major matrix
+
+        // Debug: send model state to server every frame
+        // Get _dragX and _dragY from the model's LAppModel instance
+        const dragX = model.getDraggingX(); // Assume LAppModel has getDraggingX()
+        const dragY = model.getDraggingY(); // Assume LAppModel has getDraggingY()
+
+        // Get isLeftButtonPressed() value for debugging
+        const isLeftBtnPressed = Live2dBridge.isLeftButtonPressed();
+
+        const modelParams = {
+            ParamAngleX: model.getModel().getParameterValueById(model.idParamAngleX),
+            ParamAngleY: model.getModel().getParameterValueById(model.idParamAngleY),
+            ParamEyeBallX: model.getModel().getParameterValueById(model.idParamEyeBallX),
+            ParamEyeBallY: model.getModel().getParameterValueById(model.idParamEyeBallY),
+            ParamBodyAngleX: model.getModel().getParameterValueById(model.idParamBodyAngleX),
+            // Add other parameters if needed for debugging
+        };
+
+        fetch('/api/debug/model', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            source: 'LAppLive2DManager.onUpdate.isLeftButtonPressed_debug',
+            timestamp: Date.now(),
+            dragX: dragX,
+            dragY: dragY,
+            isLeftButtonPressed: isLeftBtnPressed, // Add this for debugging
+            modelMatrixY: modelMatrix[13],
+            modelParams: modelParams
+          })
+        }).catch(()=>{});
+
+        // Update the green debug window with real drag values
+        if (typeof dragX === 'number' && typeof dragY === 'number') {
+          LAppDelegate.getInstance().showTouchDebug(`drag (${dragX.toFixed(2)}, ${dragY.toFixed(2)})`);
         }
       }
 

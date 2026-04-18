@@ -57,8 +57,25 @@ export class LAppView {
     const ratio: number = width / height;
     const left: number = -ratio;
     const right: number = ratio;
-    const bottom: number = LAppDefine.ViewLogicalLeft;
-    const top: number = LAppDefine.ViewLogicalRight;
+    // Apply DOWNWARD shift to give more room at bottom for feet
+    // Positive = shift DOWN, giving more visible space at bottom
+    const viewportShift = 0.15;
+    const bottom: number = LAppDefine.ViewLogicalBottom + viewportShift;
+    const top: number = LAppDefine.ViewLogicalTop + viewportShift;
+
+    console.log('[LAppView.initialize] canvas:', width, 'x', height, 'ratio:', ratio, 'viewportShift:', viewportShift, 'bottom:', bottom, 'top:', top);
+    // Send debug info to server
+    fetch('/api/debug/model', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        source: 'LAppView.initialize',
+        timestamp: Date.now(),
+        canvas: {width, height, ratio},
+        viewport: {left, right, bottom, top, viewportShift},
+        isPortrait: height > width
+      })
+    }).catch(()=>{});
 
     this._viewMatrix.setScreenRect(left, right, bottom, top); // デバイスに対応する画面の範囲。 Xの左端、Xの右端、Yの下端、Yの上端
     this._viewMatrix.scale(LAppDefine.ViewScale, LAppDefine.ViewScale);
@@ -203,7 +220,7 @@ export class LAppView {
    */
   public onTouchesMoved(pointX: number, pointY: number): void {
     const viewX: number = this.transformViewX(this._touchManager.getX());
-    const viewY: number = this.transformViewY(this._touchManager.getY());
+    let viewY: number = this.transformViewY(this._touchManager.getY());
 
     this._touchManager.touchesMoved(
       pointX * window.devicePixelRatio,
@@ -211,6 +228,9 @@ export class LAppView {
     );
 
     const live2DManager: LAppLive2DManager = LAppLive2DManager.getInstance();
+
+    // 修复Y轴符号问题：无论拖拽方向Y值总是负的，取反使其正确
+    viewY = -viewY;
     live2DManager.onDrag(viewX, viewY);
   }
 

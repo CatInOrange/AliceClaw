@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260417_214343",
+  "data": {
+    "source": "LAppView.initialize",
+    "timestamp": 1776433423606,
+    "canvas": {
+      "width": 844,
+      "height": 841,
+      "ratio": 1.0035671819262781
+    },
+    "viewport": {
+      "left": -1.0035671819262781,
+      "right": 1.0035671819262781,
+      "bottom": -0.85,
+      "top": 1.15,
+      "viewportShift": 0.15
+    },
+    "isPortrait": false
+  }
+}

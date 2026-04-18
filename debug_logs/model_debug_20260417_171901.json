@@ -1,0 +1,34 @@
+{
+  "timestamp": "20260417_171901",
+  "data": {
+    "source": "LAppLive2DManager.onUpdate",
+    "timestamp": 1776417541435,
+    "canvas": {
+      "width": 554,
+      "height": 1920
+    },
+    "canvasWidth": 1,
+    "isPortrait": true,
+    "isLongHorizontalModel": false,
+    "modelMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "modelBottom": -1,
+    "modelTop": 1
+  }
+}

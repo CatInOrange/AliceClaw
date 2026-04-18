@@ -146,6 +146,7 @@ export class CubismTargetPoint {
    * @param y Y軸の顔の向きの値（-1.0 ~ 1.0）
    */
   public set(x: number, y: number): void {
+    console.log(`[DEBUG] CubismTargetPoint.set called with x=${x}, y=${y}`);
     this._faceTargetX = x;
     this._faceTargetY = y;
   }

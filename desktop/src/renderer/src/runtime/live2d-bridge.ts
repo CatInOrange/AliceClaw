@@ -230,12 +230,32 @@ export function setTrackedPointerPosition(pointer: { x: number; y: number; butto
 
 if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKING__) {
   (window as any).__OPENCLAW_POINTER_TRACKING__ = true;
+  window.addEventListener("pointerdown", (event) => {
+    setTrackedPointerPosition({
+      x: event.clientX,
+      y: event.clientY,
+      buttons: event.buttons,
+    });
+  });
   window.addEventListener("pointermove", (event) => {
     setTrackedPointerPosition({
       x: event.clientX,
       y: event.clientY,
       buttons: event.buttons,
     });
+  });
+  // Also track pointerup to handle mouse release outside window
+  window.addEventListener("pointerup", (event) => {
+    setTrackedPointerPosition({
+      x: event.clientX,
+      y: event.clientY,
+      buttons: event.buttons,
+    });
+    // Fix: Reset drag to 0 when pointer is released
+    const manager = getAdapter()?.getMgr?.();
+    if (manager && typeof manager.onDrag === 'function') {
+      manager.onDrag(0, 0);
+    }
   });
 }
 

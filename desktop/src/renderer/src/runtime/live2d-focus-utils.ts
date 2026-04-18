@@ -25,17 +25,6 @@ export function applyLive2DFocus({
 
   const width = Number(canvasRect.width);
   const height = Number(canvasRect.height);
-  // DEBUG: log values for pet mode gaze debugging
-  console.log('[applyLive2DFocus DEBUG]', {
-    pointerX: pointer.x,
-    pointerY: pointer.y,
-    canvasRectLeft: canvasRect.left,
-    canvasRectTop: canvasRect.top,
-    canvasRectWidth: canvasRect.width,
-    canvasRectHeight: canvasRect.height,
-    windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth : 'N/A',
-    windowInnerHeight: typeof window !== 'undefined' ? window.innerHeight : 'N/A',
-  });
   // In pet mode, pointer.x is in screen/renderer coordinates (0 to renderer width),
   // while canvasRect.width is the canvas width. We need to scale pointer.x from
   // renderer coordinates to canvas coordinates.
@@ -45,12 +34,6 @@ export function applyLive2DFocus({
     0,
     width
   );
-  console.log('[applyLive2DFocus DEBUG] localX calculation:', {
-    formula: `((pointer.x - canvasRect.left) * width) / rendererWidth`,
-    raw: `(${pointer.x} - ${canvasRect.left}) * ${width} / ${rendererWidth}`,
-    result: ((Number(pointer.x) - Number(canvasRect.left || 0)) * width) / rendererWidth,
-    clamped: localX,
-  });
   const localY = clamp(Number(pointer.y) - Number(canvasRect.top || 0), 0, height);
   const headRatio = clamp(Number(config?.headRatio ?? 0.25), 0, 1);
   const headY = Number(model?.y || height * 0.5) - Number(model?.height || height) * headRatio;
@@ -76,6 +59,17 @@ export function applyLive2DFocus({
     const scaledY = focusedY * Number(devicePixelRatio || 1);
     const dragX = view.transformViewX(scaledX);
     const dragY = view.transformViewY(scaledY);
+
+    // DEBUG: Log Y coordinate transformation
+    console.log(`[DEBUG dragY] localY=${localY}, headY=${headY}, biasY=${biasY}, focusedY=${focusedY}, scaledY=${scaledY}, dragY=${dragY}`);
+    if (view._deviceToScreen) {
+      const dtos = view._deviceToScreen;
+      console.log(`[DEBUG dragY] _deviceToScreen tr[5]=${dtos._tr[5]}, tr[13]=${dtos._tr[13]}`);
+    }
+    if (view._viewMatrix) {
+      const vm = view._viewMatrix;
+      console.log(`[DEBUG dragY] _viewMatrix tr[5]=${vm._tr[5]}, tr[13]=${vm._tr[13]}`);
+    }
 
     if (Number.isFinite(Number(dragX)) && Number.isFinite(Number(dragY))) {
       manager.onDrag(dragX, dragY);

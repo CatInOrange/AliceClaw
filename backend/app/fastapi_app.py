@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from .agents.openclaw_channel import ensure_bridge_listener, set_push_callback, stop_bridge_listener
 from .app_context import create_app_context
 from .config import FRONTEND_DIR, UPLOADS_DIR, get_chat_providers
-from .routes import create_assets_router, create_chat_router, create_events_router, create_runtime_router, create_sessions_router
+from .routes import create_assets_router, create_chat_router, create_debug_router, create_events_router, create_runtime_router, create_sessions_router
 from .utils import log_push_debug
 from .web.helpers import build_allowed_origins, build_push_route_key, build_session_label
 
@@ -118,6 +118,7 @@ def create_app() -> FastAPI:
     app.include_router(create_sessions_router(context))
     app.include_router(create_events_router(context))
     app.include_router(create_chat_router(context))
+    app.include_router(create_debug_router())
     app.include_router(create_assets_router())
 
     app.mount('/uploads', StaticFiles(directory=str(context.uploads_dir), html=False), name='uploads')

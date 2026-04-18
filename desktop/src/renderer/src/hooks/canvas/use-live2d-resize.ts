@@ -216,8 +216,19 @@ export const useLive2DResize = ({
       }
 
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
+      // Cap canvas internal resolution to prevent GPU memory/precision issues on mobile
+      // Use at most 1920px on the longest side, but prefer the actual display size
+      const maxCanvasDim = 1920;
+      let internalWidth = Math.round(width * dpr);
+      let internalHeight = Math.round(height * dpr);
+      const maxDim = Math.max(internalWidth, internalHeight);
+      if (maxDim > maxCanvasDim) {
+        const scale = maxCanvasDim / maxDim;
+        internalWidth = Math.round(internalWidth * scale);
+        internalHeight = Math.round(internalHeight * scale);
+      }
+      canvas.width = internalWidth;
+      canvas.height = internalHeight;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
 

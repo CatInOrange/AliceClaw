@@ -1,0 +1,38 @@
+{
+  "timestamp": "20260417_093813",
+  "data": {
+    "timestamp": "2026-04-17T01:38:13.285Z",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    "canvas": {
+      "width": 554,
+      "height": 1920,
+      "clientWidth": 578,
+      "clientHeight": 2004,
+      "offsetWidth": 578,
+      "offsetHeight": 2004
+    },
+    "devicePixelRatio": 3.5,
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "vendor": "WebKit",
+      "renderer": "WebKit WebGL"
+    },
+    "precision": {
+      "floatVertex": null,
+      "floatFragment": null,
+      "highpFloatFragment": {},
+      "mediumpFloatFragment": {},
+      "lowpFloatFragment": {}
+    },
+    "errors": [
+      "NO_ERROR",
+      "INVALID_ENUM",
+      "INVALID_VALUE"
+    ],
+    "webglUnmasked": {
+      "vendor": "HUAWEI",
+      "renderer": "Maleoon 920"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "timestamp": "20260417_200555",
+  "data": {
+    "source": "LAppLive2DManager.onUpdate.isLeftButtonPressed_debug",
+    "timestamp": 1776427368325,
+    "dragX": 0,
+    "dragY": 0,
+    "isLeftButtonPressed": false,
+    "modelMatrixY": 0.5,
+    "modelParams": {
+      "ParamAngleX": -6.770895957946777,
+      "ParamAngleY": -3.6706442832946777,
+      "ParamEyeBallX": 0,
+      "ParamEyeBallY": 0,
+      "ParamBodyAngleX": 451.56633504365544
+    }
+  }
+}

@@ -19,7 +19,7 @@ interface SessionState {
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
-      backendUrl: "http://127.0.0.1:18080",
+      backendUrl: "",  // 空字符串会让前端使用当前页面 origin 作为 API 基础地址
       sessions: [],
       currentSessionId: null,
       connectionState: "idle",

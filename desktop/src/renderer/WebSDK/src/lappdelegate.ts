@@ -20,6 +20,9 @@ import { shouldRenderLive2DFrame } from '../../src/runtime/live2d-render-loop-ut
 export let s_instance: LAppDelegate | null = null;
 export let frameBuffer: WebGLFramebuffer | null = null;
 
+// Debug tracking for touch and drag display
+let _lastTouchStatus = '';
+let _lastDragPos: { x: number; y: number } | null = null;
 
 
 /**
@@ -66,6 +69,7 @@ export class LAppDelegate {
    * Initialize the application.
    */
   public initialize(): boolean {
+    console.log('[DEBUG] LAppDelegate.initialize() called');
     // Comment out the following code since canvas already exists in DOM
     // let parent = document.getElementById('live2d');
     // if (parent) {
@@ -95,15 +99,20 @@ export class LAppDelegate {
     gl!.enable(gl!.BLEND);
     gl!.blendFunc(gl!.SRC_ALPHA, gl!.ONE_MINUS_SRC_ALPHA);
 
+    // 创建触摸调试窗口，永久显示
+    console.log('[DEBUG] Creating touch debug window');
+    this.showTouchDebug('waiting...');
+    console.log('[DEBUG] Touch debug window created');
+
     const supportTouch: boolean = 'ontouchend' in canvas!;
 
     if (supportTouch) {
       // タッチ関連コールバック関数登録
       // 注册触摸相关回调函数
-      canvas!.addEventListener('touchstart', onTouchBegan, { passive: true });
-      canvas!.addEventListener('touchmove', onTouchMoved, { passive: true });
-      canvas!.addEventListener('touchend', onTouchEnded, { passive: true });
-      canvas!.addEventListener('touchcancel', onTouchCancel, { passive: true });
+      canvas!.addEventListener('touchstart', onTouchBegan, { passive: false });
+      canvas!.addEventListener('touchmove', onTouchMoved, { passive: false });
+      canvas!.addEventListener('touchend', onTouchEnded, { passive: false });
+      canvas!.addEventListener('touchcancel', onTouchCancel, { passive: false });
     } else {
       // マウス関連コールバック関数登録
       // 注册鼠标相关回调函数
@@ -180,6 +189,50 @@ export class LAppDelegate {
 
     // Cubism SDKの解放
     CubismFramework.dispose();
+  }
+
+  /**
+   * 在页面上显示触摸调试信息
+   */
+  public showTouchDebug(message: string): void {
+    // Track touch status (messages starting with "[")
+    if (message.startsWith('[')) {
+      _lastTouchStatus = message;
+    }
+    // Track drag position (messages starting with "drag")
+    else if (message.startsWith('drag')) {
+      const match = message.match(/drag \(([^,]+), ([^)]+)\)/);
+      if (match) {
+        _lastDragPos = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+      }
+    }
+
+    let debugDiv = document.getElementById('touch-debug');
+    if (!debugDiv) {
+      debugDiv = document.createElement('div');
+      debugDiv.id = 'touch-debug';
+      debugDiv.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #0f0;
+        padding: 10px 15px;
+        font-family: monospace;
+        font-size: 14px;
+        z-index: 999999;
+        border-radius: 5px;
+        min-width: 150px;
+      `;
+      document.body.appendChild(debugDiv);
+    }
+
+    // Display both touch status and drag position
+    let displayText = _lastTouchStatus || 'no touch';
+    if (_lastDragPos) {
+      displayText += ` | drag (${_lastDragPos.x.toFixed(2)}, ${_lastDragPos.y.toFixed(2)})`;
+    }
+    debugDiv.textContent = displayText;
   }
 
   /**
@@ -366,8 +419,24 @@ export class LAppDelegate {
       console.warn("Canvas is null, skipping resize");
       return;
     }
-    canvas.width = canvas.clientWidth * window.devicePixelRatio;
-    canvas.height = canvas.clientHeight * window.devicePixelRatio;
+    // Guard against invalid canvas CSS size (e.g., before layout is computed)
+    if (canvas.clientWidth <= 0 || canvas.clientHeight <= 0) {
+      console.warn(`[CanvasCap] Invalid canvas CSS size: ${canvas.clientWidth}x${canvas.clientHeight}, skipping resize`);
+      return;
+    }
+    // Cap canvas internal resolution to prevent GPU memory/precision issues on mobile
+    const maxCanvasDim = 1920;
+    let internalWidth = canvas.clientWidth * window.devicePixelRatio;
+    let internalHeight = canvas.clientHeight * window.devicePixelRatio;
+    const maxDim = Math.max(internalWidth, internalHeight);
+    if (maxDim > maxCanvasDim) {
+      const scale = maxCanvasDim / maxDim;
+      internalWidth = Math.round(internalWidth * scale);
+      internalHeight = Math.round(internalHeight * scale);
+      console.log(`[CanvasCap] Capped canvas from ${canvas.clientWidth * window.devicePixelRatio}x${canvas.clientHeight * window.devicePixelRatio} to ${internalWidth}x${internalHeight}`);
+    }
+    canvas.width = internalWidth;
+    canvas.height = internalHeight;
     if (gl) {
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     }
@@ -440,17 +509,20 @@ function onClickEnded(e: MouseEvent): void {
  * タッチしたときに呼ばれる。
  */
 function onTouchBegan(e: TouchEvent): void {
-  if (!LAppDelegate.getInstance()._view) {
-    LAppPal.printMessage('view notfound');
-    return;
-  }
-
   LAppDelegate.getInstance()._captured = true;
 
   const posX = e.changedTouches[0].pageX;
   const posY = e.changedTouches[0].pageY;
+  LAppDelegate.getInstance().showTouchDebug(`[START] (${posX.toFixed(0)}, ${posY.toFixed(0)})`);
 
   LAppDelegate.getInstance()._view!.onTouchesBegan(posX, posY);
+
+  // 清除手指抬起重置标志，允许新的拖拽
+  const live2DManager: LAppLive2DManager = LAppLive2DManager.getInstance();
+  const model = live2DManager.getModel(0);
+  if (model) {
+    model.clearTouchEndedFlag();
+  }
 }
 
 /**
@@ -478,36 +550,68 @@ function onTouchMoved(e: TouchEvent): void {
  * タッチが終了したら呼ばれる。
  */
 function onTouchEnded(e: TouchEvent): void {
-  LAppDelegate.getInstance()._captured = false;
+  // 最显眼的调试信息，确保能看到
+  LAppDelegate.getInstance().showTouchDebug('!!! ON_TOUCH_END CALLED !!!');
+  console.log('[CRITICAL] onTouchEnded event fired!');
+  
+  try {
+    LAppDelegate.getInstance()._captured = false;
 
-  if (!LAppDelegate.getInstance()._view) {
-    LAppPal.printMessage('view notfound');
-    return;
+    if (!LAppDelegate.getInstance()._view) {
+      LAppPal.printMessage('view notfound');
+      return;
+    }
+
+    const rect = (e.target as Element).getBoundingClientRect();
+
+    const posX = e.changedTouches[0].clientX - rect.left;
+    const posY = e.changedTouches[0].clientY - rect.top;
+    LAppDelegate.getInstance().showTouchDebug(`[END] (${posX.toFixed(0)}, ${posY.toFixed(0)})`);
+
+    LAppDelegate.getInstance()._view!.onTouchesEnded(posX, posY);
+
+    // 重置drag为0，确保touchend后目光回到中心
+    console.log('[DEBUG] onTouchEnded calling onDrag(0.0, 0.0)');
+    const live2DManager: LAppLive2DManager = LAppLive2DManager.getInstance();
+    live2DManager.onDrag(0.0, 0.0);
+    console.log('[DEBUG] onDrag called');
+    LAppDelegate.getInstance().showTouchDebug('[DEBUG] onDrag called');
+    
+    // 打印drag manager的实际值
+    const model = live2DManager.getModel(0);
+    if (model) {
+      const dragX = model.getDraggingX();
+      const dragY = model.getDraggingY();
+      console.log(`[DEBUG] After onDrag: dragX=${dragX}, dragY=${dragY}`);
+      LAppDelegate.getInstance().showTouchDebug(`drag=(${dragX.toFixed(2)}, ${dragY.toFixed(2)})`);
+
+      // 通知 model 在下一帧强制归零 drag 值（安全网）
+      model.resetDragOnTouchEnd();
+    }
+  } catch (error) {
+    LAppDelegate.getInstance().showTouchDebug(`[ERROR] ${error}`);
+    console.error('[DEBUG] onTouchEnded error:', error);
   }
-
-  const rect = (e.target as Element).getBoundingClientRect();
-
-  const posX = e.changedTouches[0].clientX - rect.left;
-  const posY = e.changedTouches[0].clientY - rect.top;
-
-  LAppDelegate.getInstance()._view!.onTouchesEnded(posX, posY);
 }
 
 /**
- * タッチがキャンセルされると呼ばれる。
+ * 触摸被取消时调用。
+ * touchcancel时直接重置drag为(0,0)，确保目光回到中心
  */
 function onTouchCancel(e: TouchEvent): void {
+  e.preventDefault();  // 阻止同时触发 mouseup
+
   LAppDelegate.getInstance()._captured = false;
 
-  if (!LAppDelegate.getInstance()._view) {
-    LAppPal.printMessage('view notfound');
-    return;
+  LAppDelegate.getInstance().showTouchDebug(`[CANCEL]`);
+
+  // 直接重置drag为0，确保touchcancel时目光回到中心
+  const live2DManager: LAppLive2DManager = LAppLive2DManager.getInstance();
+  live2DManager.onDrag(0.0, 0.0);
+
+  // 通知 model 在下一帧强制归零 drag 值（安全网）
+  const model = live2DManager.getModel(0);
+  if (model) {
+    model.resetDragOnTouchEnd();
   }
-
-  const rect = (e.target as Element).getBoundingClientRect();
-
-  const posX = e.changedTouches[0].clientX - rect.left;
-  const posY = e.changedTouches[0].clientY - rect.top;
-
-  LAppDelegate.getInstance()._view!.onTouchesEnded(posX, posY);
 }

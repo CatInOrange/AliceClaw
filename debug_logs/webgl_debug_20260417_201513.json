@@ -1,0 +1,54 @@
+{
+  "timestamp": "20260417_201513",
+  "data": {
+    "timestamp": "2026-04-17T12:14:51.006Z",
+    "userAgent": "Mozilla/5.0 (Linux; Android 12; HarmonyOS; BKY-W20; HMSCore 6.15.4.342) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.196 HuaweiBrowser/17.0.1.301 Safari/537.36",
+    "canvas": {
+      "width": 1831,
+      "height": 1766,
+      "clientWidth": 814,
+      "clientHeight": 785,
+      "offsetWidth": 814,
+      "offsetHeight": 785
+    },
+    "devicePixelRatio": 2.25,
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "vendor": "WebKit",
+      "renderer": "WebKit WebGL"
+    },
+    "precision": {
+      "floatVertex": null,
+      "floatFragment": null,
+      "highpFloatFragment": {},
+      "mediumpFloatFragment": {},
+      "lowpFloatFragment": {}
+    },
+    "limits": {
+      "maxTextureSize": 4096,
+      "maxViewportDims": {
+        "0": 8192,
+        "1": 8192
+      },
+      "maxRenderbufferSize": 8192
+    },
+    "errors": [
+      "NO_ERROR",
+      "INVALID_ENUM",
+      "INVALID_VALUE"
+    ],
+    "textureLoadLog": [
+      "[TextureLoad] Loading: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_00.png",
+      "[TextureLoad] Loading: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_01.png",
+      "[TextureLoad] Loading: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_02.png",
+      "[TextureLoad] Loaded: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_00.png (8192x4096)",
+      "[TextureLoad] Loaded: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_02.png (8192x8192)",
+      "[TextureLoad] Loaded: http://43.156.5.177:8080/models/bian/Sufu.8192/texture_01.png (4096x4096)"
+    ],
+    "webglUnmasked": {
+      "vendor": "HUAWEI",
+      "renderer": "Maleoon 910"
+    }
+  }
+}

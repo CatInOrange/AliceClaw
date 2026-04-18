@@ -5,6 +5,7 @@ const BG_STORAGE_KEY = 'live2d-custom-background';
 
 export function createLive2DController({ refs, layout, saveLayout, setStatus }) {
   window.PIXI = PIXI;
+  console.log('[LIVE2D] createLive2DController called');
   const { canvas, controls, bgImageInputEl, clearBgBtnEl, resetBgBtnEl } = refs;
 
   // Track last pointer position (in client coordinates) so that changing focusCenter
@@ -387,8 +388,12 @@ export function createLive2DController({ refs, layout, saveLayout, setStatus }) 
     model.scale.set(effectiveScale, effectiveScale);
     model.anchor.set(0.5, 0.5);
     model.x = app.renderer.width * (0.5 + Number(layout.offsetX) / 100);
-    const petBaseY = isDesktopPetMode() ? 0.61 : 0.82;
-    model.y = app.renderer.height * petBaseY + app.renderer.height * (Number(layout.offsetY) / 100);
+    const petBaseY = isDesktopPetMode() ? 0.61 : 0.5;
+    const offsetYPercent = Number(layout.offsetY);
+    const offsetYPixels = app.renderer.height * (offsetYPercent / 100);
+    const finalY = app.renderer.height * petBaseY + offsetYPixels - 200;
+    console.log('[DEBUG] petBaseY=', petBaseY, 'layout.offsetY=', offsetYPercent, 'offsetYPixels=', offsetYPixels, 'finalY=', finalY, 'renderer.height=', app.renderer.height);
+    model.y = finalY;
     if (emitBounds) emitPetModelBounds();
   }
   function resizeModel() {
@@ -570,6 +575,32 @@ export function createLive2DController({ refs, layout, saveLayout, setStatus }) 
     model.on('pointerup', stopDragging); model.on('pointerupoutside', stopDragging);
     model.on('pointertap', () => { if (dragMoved) return; const firstMotion = modelMeta?.motions?.[0]; if (firstMotion) triggerMotion(firstMotion.group, firstMotion.index, firstMotion.file || firstMotion.label); });
     resizeModel(); bindPersistentExpressionTicker(); applyPersistentExpressionState(1); resetFocus(true);
+    // Apply a one-time upward offset after model loads to fix position
+    try {
+        console.error('[URGENT DEBUG] live2d.js model load code reached! yOffset will be set to -1000!');
+        const yOffset = -1000;
+        const modelJsonUrl = modelMeta?.modelJson || 'unknown';
+        const modelYVal = Number(model.y) || 0;
+        const debugInfo = {
+            modelUrl: modelJsonUrl,
+            modelY_before: modelYVal,
+            yOffset: yOffset,
+            modelY_after: modelYVal + yOffset,
+            modelType: typeof model.y,
+            timestamp: new Date().toISOString()
+        };
+        // Show debug info on screen for 10 seconds
+        const debugDiv = document.createElement('div');
+        debugDiv.style.cssText = 'position:fixed;top:10px;left:10px;background:rgba(255,0,0,0.9);color:white;padding:10px;z-index:999999;font-size:12px;max-width:300px;word-break:break-all;';
+        debugDiv.innerHTML = '<b>DEBUG MODEL POSITION</b><br>' + JSON.stringify(debugInfo, null, 2).replace(/\n/g, '<br>');
+        document.body.appendChild(debugDiv);
+        setTimeout(() => { debugDiv.remove(); }, 10000);
+        console.log('[DEBUG] model position offset:', JSON.stringify(debugInfo));
+        fetch('/api/debug/model', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(debugInfo) }).catch(e => { console.error('Fetch failed:', e); });
+        requestAnimationFrame(() => { model.y += yOffset; });
+    } catch (err) {
+        console.error('[DEBUG ERROR]', err);
+    }
     // Load saved background after app is created
     loadSavedBackground();
     bindBackgroundControls();

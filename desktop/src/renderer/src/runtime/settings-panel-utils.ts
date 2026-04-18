@@ -1,7 +1,7 @@
 import { normalizeBaseUrl } from "../platform/backend/openclaw-api.ts";
 
 const SUPPORTED_LANGUAGES = new Set(["en", "zh"]);
-const DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:18080";
+const DEFAULT_BACKEND_BASE_URL = "";  // 空字符串会触发 normalizeBaseUrl 使用 window.location.origin
 
 function splitFieldKey(key) {
   return String(key || "")

@@ -235,7 +235,7 @@ export class LAppView {
     const deltaX = pointX - this._touchStartX;
     const deltaY = pointY - this._touchStartY;
     const dragX = Math.max(-1, Math.min(1, deltaX / (canvasWidth * 0.25)));
-    const dragY = Math.max(-1, Math.min(1, deltaY / (canvasHeight * 0.25)));
+    const dragY = Math.max(-1, Math.min(1, -deltaY / (canvasHeight * 0.25)));
 
     fetch('/api/debug/webgl', {
       method: 'POST',

@@ -289,8 +289,9 @@ function WindowShell() {
         {isElectron ? <TitleBar /> : null}
 
         <Box
-          flex={isPortraitLayout ? "0 0 46vh" : "1"}
-          minH={isPortraitLayout ? "280px" : "0"}
+          flex={isPortraitLayout ? "1" : "1"}
+          minH={isPortraitLayout ? "300px" : "0"}
+          maxH={isPortraitLayout ? "65vh" : "none"}
           position="relative"
           overflow="hidden"
         >
@@ -344,10 +345,10 @@ function WindowShell() {
         <Box
           w={isPortraitLayout ? "100%" : { base: "400px", lg: "430px" }}
           minW={isPortraitLayout ? "0" : { base: "400px", lg: "430px" }}
-          h={isPortraitLayout ? "54vh" : "100%"}
+          h={isPortraitLayout ? "35vh" : "100%"}
           px={isPortraitLayout ? "4" : "5"}
           pt={isElectron ? "42px" : isPortraitLayout ? "3" : "4"}
-          pb={isPortraitLayout ? "4" : "5"}
+          pb={isPortraitLayout ? "3" : "5"}
           bg="linear-gradient(180deg, #fbf7f3 0%, #f4ece4 100%)"
           borderLeft={isPortraitLayout ? "0" : "1px solid"}
           borderTop={isPortraitLayout ? "1px solid" : "0"}

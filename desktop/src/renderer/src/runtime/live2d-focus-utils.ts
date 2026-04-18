@@ -93,6 +93,7 @@ export function applyLive2DFocus({
       // Final drag values
       dragX,
       dragY,
+      finalDragY: pointerType === 'touch' ? -dragY : dragY,
 
       // Scaling
       devicePixelRatio: Number(devicePixelRatio || 1),

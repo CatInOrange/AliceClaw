@@ -231,6 +231,25 @@ export class LAppView {
 
     // 修复Y轴符号问题：无论拖拽方向Y值总是负的，取反使其正确
     viewY = -viewY;
+
+    fetch('/api/debug/webgl', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'nativeTouchDrag',
+        source: 'LAppView.onTouchesMoved',
+        pointX,
+        pointY,
+        touchManagerX: this._touchManager.getX(),
+        touchManagerY: this._touchManager.getY(),
+        viewX,
+        viewY,
+        devicePixelRatio: window.devicePixelRatio,
+        _deviceToScreen_tr5: this._deviceToScreen?._tr?.[5] ?? 0,
+        _viewMatrix_tr5: this._viewMatrix?._tr?.[5] ?? 0,
+      })
+    }).catch(() => {});
+
     live2DManager.onDrag(viewX, viewY);
   }
 

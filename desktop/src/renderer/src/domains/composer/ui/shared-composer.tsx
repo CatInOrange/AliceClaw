@@ -160,6 +160,7 @@ export function SharedComposer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isComposing, setIsComposing] = useState(false);
   const controlSize = compact ? "44px" : "48px";
+  const isMobileSized = compact;
   const {
     composerDraft,
     composerAttachments,
@@ -295,6 +296,8 @@ export function SharedComposer({
       gap="3"
       onDragOver={(event) => event.preventDefault()}
       onDrop={handleDrop}
+      pt={isMobileSized ? "2" : undefined}
+      pb={isMobileSized ? "calc(env(safe-area-inset-bottom, 0px) + 4px)" : undefined}
     >
       {composerAttachments.length > 0 && (
         <Flex gap="2" wrap="wrap">
@@ -329,7 +332,7 @@ export function SharedComposer({
           border="1px solid"
           borderColor={lunariaColors.border}
           h={controlSize}
-          px="4"
+          px={isMobileSized ? "3.5" : "4"}
           display="flex"
           alignItems="center"
           transition="border-color 0.18s ease, box-shadow 0.18s ease"
@@ -347,11 +350,12 @@ export function SharedComposer({
             onCompositionEnd={() => setIsComposing(false)}
             placeholder={t("composer.placeholder")}
             bg="transparent"
+            fontSize={isMobileSized ? "14px" : undefined}
             border="none"
             outline="none"
             px="0"
             h="100%"
-            minH="unset"
+            minH={isMobileSized ? "40px" : "unset"}
             boxShadow="none"
             _focus={{ boxShadow: "none", outline: "none" }}
             _focusVisible={{ boxShadow: "none", outline: "none" }}

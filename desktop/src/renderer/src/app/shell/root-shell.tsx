@@ -237,6 +237,7 @@ function WindowShell() {
     manifestName: manifest?.model.name,
   });
   const isPortraitLayout = !isElectron && viewportSize.height > viewportSize.width;
+  const isMobileWeb = !isElectron && viewportSize.width <= 960;
 
   useEffect(() => {
     const handleResize = () => {
@@ -274,12 +275,12 @@ function WindowShell() {
   };
 
   return (
-    <Flex h="100vh" w="100vw" bg="transparent" overflow="hidden" position="relative">
+    <Flex h="100dvh" w="100vw" bg="transparent" overflow="hidden" position="relative">
       <Flex
         flex="1"
         position="relative"
         overflow="hidden"
-        direction={isPortraitLayout ? "column" : "row"}
+        direction={isMobileWeb ? "column" : (isPortraitLayout ? "column" : "row")}
         borderRadius={isElectron ? "26px" : "0"}
         border="1px solid"
         borderColor={lunariaColors.border}
@@ -289,9 +290,9 @@ function WindowShell() {
         {isElectron ? <TitleBar /> : null}
 
         <Box
-          flex={isPortraitLayout ? "1" : "1"}
-          minH={isPortraitLayout ? "300px" : "0"}
-          maxH={isPortraitLayout ? "65vh" : "none"}
+          flex={isMobileWeb ? "1.35" : "1"}
+          minH={isMobileWeb ? "56dvh" : (isPortraitLayout ? "300px" : "0")}
+          maxH={isMobileWeb ? "70dvh" : (isPortraitLayout ? "65vh" : "none")}
           position="relative"
           overflow="hidden"
         >
@@ -343,12 +344,13 @@ function WindowShell() {
         </Box>
 
         <Box
-          w={isPortraitLayout ? "100%" : { base: "400px", lg: "430px" }}
-          minW={isPortraitLayout ? "0" : { base: "400px", lg: "430px" }}
-          h={isPortraitLayout ? "35vh" : "100%"}
-          px={isPortraitLayout ? "4" : "5"}
-          pt={isElectron ? "42px" : isPortraitLayout ? "3" : "4"}
-          pb={isPortraitLayout ? "3" : "5"}
+          w={isMobileWeb ? "100%" : (isPortraitLayout ? "100%" : { base: "400px", lg: "430px" })}
+          minW={isMobileWeb ? "0" : (isPortraitLayout ? "0" : { base: "400px", lg: "430px" })}
+          h={isMobileWeb ? "auto" : (isPortraitLayout ? "35vh" : "100%")}
+          minH={isMobileWeb ? "30dvh" : undefined}
+          px={isMobileWeb ? "3.5" : (isPortraitLayout ? "4" : "5")}
+          pt={isElectron ? "42px" : isMobileWeb ? "2.5" : (isPortraitLayout ? "3" : "4")}
+          pb={isMobileWeb ? "calc(env(safe-area-inset-bottom, 0px) + 12px)" : (isPortraitLayout ? "3" : "5")}
           bg="linear-gradient(180deg, #fbf7f3 0%, #f4ece4 100%)"
           borderLeft={isPortraitLayout ? "0" : "1px solid"}
           borderTop={isPortraitLayout ? "1px solid" : "0"}
@@ -357,13 +359,24 @@ function WindowShell() {
           zIndex="5"
         >
           <Flex h="100%" direction="column" gap="0">
-            <HStack justify="space-between" align="center" pb={isPortraitLayout ? "3" : "4"}>
+            <HStack justify="space-between" align="center" pb={isMobileWeb ? "2" : (isPortraitLayout ? "3" : "4") }>
               <Box>
                 <Text fontSize="lg" {...lunariaHeadingStyles}>
                   {assistantDisplayName}
                 </Text>
               </Box>
               <HStack gap="2">
+                {isMobileWeb ? (
+                  <IconButton
+                    aria-label={t("shell.toggleSessions")}
+                    onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "sessions"))}
+                    {...lunariaIconButtonStyles}
+                    bg={sessionsOpen ? lunariaColors.primarySoft : lunariaIconButtonStyles.bg}
+                    color={sessionsOpen ? lunariaColors.primaryStrong : lunariaColors.text}
+                  >
+                    <FiMessageCircle />
+                  </IconButton>
+                ) : null}
                 <IconButton aria-label={t("shell.newSession")} onClick={() => void createNewSession()} {...lunariaIconButtonStyles}><FiPlus /></IconButton>
                 <IconButton aria-label={t("common.reconnect")} onClick={() => void reconnect()} {...lunariaIconButtonStyles}><FiRefreshCcw /></IconButton>
                 <IconButton
@@ -400,6 +413,8 @@ function WindowShell() {
             <Box flex="1" minH="0" overflow="hidden">
               {settingsOpen ? (
                 <SettingsPanel />
+              ) : isMobileWeb ? (
+                <Box display="none" />
               ) : (
                 <Box
                   h="100%"
@@ -502,11 +517,14 @@ function WindowShell() {
                 {stageActionPanelOpen ? <ActionPanel /> : null}
 
                 <BottomComposer
-                  showPlusButton
+                  compact={isMobileWeb || isPortraitLayout}
+                  showPlusButton={isMobileWeb}
+                  showWindowTools={!isMobileWeb}
                   onPlusClick={() => {
                     setStageActionPanelOpen(false);
                     setWindowPlusOpen((current) => !current);
                   }}
+                  onScreenshotClick={() => void handleWindowScreenshot()}
                 />
               </Stack>
             ) : null}

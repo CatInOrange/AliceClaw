@@ -121,9 +121,7 @@ export function applyLive2DFocus({
     }
 
     if (Number.isFinite(Number(dragX)) && Number.isFinite(Number(dragY))) {
-      // Negate dragY to correct for coordinate system inversion
-      // Live2D model interprets negative Y as "up", but we want gaze to follow mouse Y direction
-      manager.onDrag(dragX, -dragY);
+      manager.onDrag(dragX, dragY);
       return true;
     }
   }

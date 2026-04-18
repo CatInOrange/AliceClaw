@@ -61,7 +61,7 @@ export function applyLive2DFocus({
     const dragY = view.transformViewY(scaledY);
 
     // DEBUG: Send dragY info to backend instead of console.log
-    const debugData = {
+    const debugData: Record<string, number> = {
       localY,
       headY,
       biasY,
@@ -74,6 +74,19 @@ export function applyLive2DFocus({
       canvasWidth: width,
       canvasHeight: height
     };
+    // Add matrix values for debugging
+    if (view._deviceToScreen) {
+      debugData['_deviceToScreen_tr0'] = view._deviceToScreen._tr[0];  // X scale
+      debugData['_deviceToScreen_tr5'] = view._deviceToScreen._tr[5];  // Y scale
+      debugData['_deviceToScreen_tr12'] = view._deviceToScreen._tr[12]; // X translation
+      debugData['_deviceToScreen_tr13'] = view._deviceToScreen._tr[13]; // Y translation
+    }
+    if (view._viewMatrix) {
+      debugData['_viewMatrix_tr0'] = view._viewMatrix._tr[0];  // X scale
+      debugData['_viewMatrix_tr5'] = view._viewMatrix._tr[5];  // Y scale
+      debugData['_viewMatrix_tr12'] = view._viewMatrix._tr[12]; // X translation
+      debugData['_viewMatrix_tr13'] = view._viewMatrix._tr[13]; // Y translation
+    }
     // Try multiple backends - localhost:18080 (desktop) and :8080 (web version via nginx)
     const urls = [
       'http://localhost:18080/api/debug/webgl',

@@ -36,10 +36,10 @@ import { formatChatMessageTimestamp } from "@/runtime/chat-time-utils.ts";
 import { Live2D } from "@/platform/live2d/ui/live2d-canvas";
 import TitleBar from "@/platform/electron/ui/title-bar";
 import { useConfig } from "@/context/character-config-context";
+import { resolveAssistantDisplayName } from "@/runtime/assistant-display-utils.ts";
 import { useMode } from "@/context/mode-context";
 import ScreenshotSelectionOverlay from "@/app/shell/screenshot-selection-overlay";
 import { SharedComposer as BottomComposer, captureCameraStill } from "@/domains/composer/ui/shared-composer";
-import { resolveAssistantDisplayName } from "@/runtime/assistant-display-utils.ts";
 import {
   useAutomationCommands,
   useChatCommands,
@@ -212,10 +212,10 @@ function SessionsPanel() {
 
 function WindowShell() {
   const { reconnect, createNewSession } = useSessionCommands();
+  const { confName } = useConfig();
   const { addFiles, startScreenshotSelection } = useComposerCommands();
   const { setMode, isElectron } = useMode();
   const { t } = useTranslation();
-  const { confName } = useConfig();
   const [sidebarPanel, setSidebarPanel] = useState<"sessions" | "settings" | null>(null);
   const [windowPlusOpen, setWindowPlusOpen] = useState(false);
   const [viewportSize, setViewportSize] = useState({
@@ -226,18 +226,18 @@ function WindowShell() {
   const manifest = useAppStore((state) => state.manifest);
   const stageActionPanelOpen = useAppStore((state) => state.stageActionPanelOpen);
   const setStageActionPanelOpen = useAppStore((state) => state.setStageActionPanelOpen);
-  const connectionState = useAppStore((state) => state.connectionState);
   const subtitle = useAppStore((state) => state.subtitle);
   const background = useAppStore((state) => state.backgroundByMode.window);
+  const connectionState = useAppStore((state) => state.connectionState);
   const sessionsOpen = shouldShowWindowSidebarSection(sidebarPanel, "sessions");
   const settingsOpen = shouldShowWindowSidebarSection(sidebarPanel, "settings");
+  const isPortraitLayout = !isElectron && viewportSize.height > viewportSize.width;
+  const isMobileWeb = !isElectron && viewportSize.width <= 960;
   const connectionTone = getLunariaIntentStyles(resolveConnectionIntent(connectionState));
   const assistantDisplayName = resolveAssistantDisplayName({
     configName: confName,
     manifestName: manifest?.model.name,
   });
-  const isPortraitLayout = !isElectron && viewportSize.height > viewportSize.width;
-  const isMobileWeb = !isElectron && viewportSize.width <= 960;
 
   useEffect(() => {
     const handleResize = () => {
@@ -276,6 +276,22 @@ function WindowShell() {
 
   return (
     <Flex h="100dvh" w="100vw" bg="transparent" overflow="hidden" position="relative">
+      <Box position="fixed" top={isPortraitLayout ? "14px" : "24px"} right={isPortraitLayout ? "14px" : "24px"} zIndex="30" pointerEvents="none">
+        <Text
+          px="3.5"
+          py="2"
+          borderRadius="999px"
+          bg={connectionTone.bg}
+          color={connectionTone.color}
+          border="1px solid"
+          borderColor={connectionTone.borderColor}
+          fontSize="12px"
+          fontWeight="700"
+        >
+          {connectionState}
+        </Text>
+      </Box>
+
       <Flex
         flex="1"
         position="relative"
@@ -307,39 +323,6 @@ function WindowShell() {
               <Live2D />
             </Box>
 
-            <Box position="absolute" top={isPortraitLayout ? "14px" : "24px"} right={isPortraitLayout ? "14px" : "24px"} zIndex="10">
-              <Text
-                px="3.5"
-                py="2"
-                borderRadius="999px"
-                bg={connectionTone.bg}
-                color={connectionTone.color}
-                border="1px solid"
-                borderColor={connectionTone.borderColor}
-                fontSize="12px"
-                fontWeight="700"
-              >
-                {connectionState}
-              </Text>
-            </Box>
-
-            {subtitle ? (
-              <Box
-                position="absolute"
-                left="50%"
-                bottom={isPortraitLayout ? "18px" : "54px"}
-                transform="translateX(-50%)"
-                maxW={isPortraitLayout ? "calc(100vw - 28px)" : "min(62vw, 720px)"}
-                px={isPortraitLayout ? "4" : "5"}
-                py={isPortraitLayout ? "3" : "4"}
-                {...lunariaPanelStyles}
-                zIndex="10"
-              >
-                <Text textAlign="center" color={lunariaColors.text} fontWeight="500" lineHeight="1.8">
-                  {subtitle}
-                </Text>
-              </Box>
-            ) : null}
           </Box>
         </Box>
 
@@ -359,35 +342,10 @@ function WindowShell() {
           zIndex="5"
         >
           <Flex h="100%" direction="column" gap="0">
-            <HStack justify="space-between" align="center" pb={isMobileWeb ? "2" : (isPortraitLayout ? "3" : "4") }>
-              <Box>
-                <Text fontSize="lg" {...lunariaHeadingStyles}>
-                  {assistantDisplayName}
-                </Text>
-              </Box>
+            <HStack justify="flex-end" align="center" pb={isMobileWeb ? "2" : (isPortraitLayout ? "3" : "4") }>
               <HStack gap="2">
-                {isMobileWeb ? (
-                  <IconButton
-                    aria-label={t("shell.toggleSessions")}
-                    onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "sessions"))}
-                    {...lunariaIconButtonStyles}
-                    bg={sessionsOpen ? lunariaColors.primarySoft : lunariaIconButtonStyles.bg}
-                    color={sessionsOpen ? lunariaColors.primaryStrong : lunariaColors.text}
-                  >
-                    <FiMessageCircle />
-                  </IconButton>
-                ) : null}
                 <IconButton aria-label={t("shell.newSession")} onClick={() => void createNewSession()} {...lunariaIconButtonStyles}><FiPlus /></IconButton>
                 <IconButton aria-label={t("common.reconnect")} onClick={() => void reconnect()} {...lunariaIconButtonStyles}><FiRefreshCcw /></IconButton>
-                <IconButton
-                  aria-label={t("shell.toggleSessions")}
-                  onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "sessions"))}
-                  {...lunariaIconButtonStyles}
-                  bg={sessionsOpen ? lunariaColors.primarySoft : lunariaIconButtonStyles.bg}
-                  color={sessionsOpen ? lunariaColors.primaryStrong : lunariaColors.text}
-                >
-                  <FiMessageCircle />
-                </IconButton>
                 <IconButton
                   aria-label={t("shell.toggleSettings")}
                   onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "settings"))}
@@ -403,18 +361,9 @@ function WindowShell() {
               </HStack>
             </HStack>
 
-            {sessionsOpen && !settingsOpen ? (
-              <Box borderTop="1px solid" borderColor={lunariaColors.border} pt="4" pb="3" maxH={isPortraitLayout ? "22vh" : "unset"} overflowY="auto">
-                <Text {...lunariaEyebrowStyles}>{t("shell.sessions")}</Text>
-                <SessionsPanel />
-              </Box>
-            ) : null}
-
             <Box flex="1" minH="0" overflow="hidden">
               {settingsOpen ? (
                 <SettingsPanel />
-              ) : isMobileWeb ? (
-                <Box display="none" />
               ) : (
                 <Box
                   h="100%"
@@ -425,17 +374,14 @@ function WindowShell() {
                   borderTop="1px solid"
                   borderColor={lunariaColors.border}
                 >
-                  <HStack justify="space-between" mb="3" pt={isPortraitLayout ? "3" : "4"}>
+                  <HStack justify="flex-start" mb="3" pt={isPortraitLayout ? "3" : "4"}>
                     <Box>
                       <Text {...lunariaEyebrowStyles}>{t("shell.conversation")}</Text>
                     </Box>
-                    <Text fontSize="12px" color={lunariaColors.textSubtle}>
-                      {manifest?.selectedModelId || manifest?.model.id || "model"}
-                    </Text>
                   </HStack>
                   <CurrentSessionMessageList
                     hideScrollbar
-                    assistantName={assistantDisplayName}
+                    assistantName=""
                     emptyState={{
                       title: t("shell.emptyConversationTitle"),
                       hint: t("shell.emptyConversationHint"),
@@ -448,6 +394,23 @@ function WindowShell() {
 
             {!settingsOpen ? (
               <Stack gap="2" pt="2">
+                {subtitle ? (
+                  <Box
+                    px={isMobileWeb ? "3.5" : "4"}
+                    py={isMobileWeb ? "3" : "3.5"}
+                    {...lunariaPanelStyles}
+                  >
+                    <Text
+                      textAlign="left"
+                      color={lunariaColors.text}
+                      fontWeight="500"
+                      lineHeight="1.8"
+                      fontSize={isMobileWeb ? "sm" : "md"}
+                    >
+                      {subtitle}
+                    </Text>
+                  </Box>
+                ) : null}
                 <input
                   ref={windowFileInputRef}
                   type="file"

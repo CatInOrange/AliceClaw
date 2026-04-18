@@ -229,9 +229,6 @@ export class LAppView {
 
     const live2DManager: LAppLive2DManager = LAppLive2DManager.getInstance();
 
-    // 修复Y轴符号问题：无论拖拽方向Y值总是负的，取反使其正确
-    viewY = -viewY;
-
     fetch('/api/debug/webgl', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},

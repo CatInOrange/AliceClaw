@@ -60,16 +60,25 @@ export function applyLive2DFocus({
     const dragX = view.transformViewX(scaledX);
     const dragY = view.transformViewY(scaledY);
 
-    // DEBUG: Log Y coordinate transformation
-    console.log(`[DEBUG dragY] localY=${localY}, headY=${headY}, biasY=${biasY}, focusedY=${focusedY}, scaledY=${scaledY}, dragY=${dragY}`);
-    if (view._deviceToScreen) {
-      const dtos = view._deviceToScreen;
-      console.log(`[DEBUG dragY] _deviceToScreen tr[5]=${dtos._tr[5]}, tr[13]=${dtos._tr[13]}`);
-    }
-    if (view._viewMatrix) {
-      const vm = view._viewMatrix;
-      console.log(`[DEBUG dragY] _viewMatrix tr[5]=${vm._tr[5]}, tr[13]=${vm._tr[13]}`);
-    }
+    // DEBUG: Send dragY info to backend instead of console.log
+    const debugData = {
+      localY,
+      headY,
+      biasY,
+      focusedY,
+      scaledY,
+      dragY,
+      dragX,
+      pointerX: pointer.x,
+      pointerY: pointer.y,
+      canvasWidth: width,
+      canvasHeight: height
+    };
+    fetch('/api/debug/webgl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'dragY', ...debugData })
+    }).catch(() => {});  // Ignore errors
 
     if (Number.isFinite(Number(dragX)) && Number.isFinite(Number(dragY))) {
       manager.onDrag(dragX, dragY);

@@ -95,6 +95,10 @@
       main {
         grid-template-columns: 1fr;
       }
+      /* 在移动端/单栏布局下，即使在桌宠模式也显示聊天面板 */
+      body.desktop-shell-enabled.desktop-mode-pet .chat-panel {
+        display: flex !important;
+      }
     }
 
     /* Stage - 左侧模型区域 */

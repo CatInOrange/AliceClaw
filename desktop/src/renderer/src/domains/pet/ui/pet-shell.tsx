@@ -77,6 +77,8 @@ export function PetShell({
   const manifest = useAppStore((state) => state.manifest);
   const connectionState = useAppStore((state) => state.connectionState);
   const currentMessages = useAppStore(selectCurrentSessionMessages);
+  const currentSessionId = useAppStore((state) => state.currentSessionId);
+  const streamingMessage = useAppStore((state) => state.streamingMessage);
   const assistantDisplayName = resolveAssistantDisplayName({
     configName: confName,
     manifestName: manifest?.model.name,
@@ -406,9 +408,6 @@ export function PetShell({
                 <Text fontSize="sm" fontWeight="700" color={lunariaColors.heading}>
                   {assistantDisplayName}
                 </Text>
-                <Text fontSize="xs" color={lunariaColors.textMuted}>
-                  {connectionState}
-                </Text>
               </Box>
               <HStack gap="1">
                 <IconButton
@@ -454,6 +453,9 @@ export function PetShell({
                   backendUrl={backendUrl}
                   assistantName={assistantDisplayName}
                   compact
+                  variant="pet"
+                  currentSessionId={currentSessionId}
+                  streamingMessage={streamingMessage}
                 />
               </Box>
 

@@ -10,6 +10,8 @@ import { updateModelConfig } from '../../../WebSDK/src/lappdefine';
 import { LAppDelegate } from '../../../WebSDK/src/lappdelegate';
 import { initializeLive2D } from '@cubismsdksamples/main';
 import { useMode } from '@/context/mode-context';
+import { useAppStore } from "@/domains/renderer-store";
+import { createOptimisticChatMessage } from "@/runtime/chat-send-lifecycle.ts";
 import {
   cancelScheduledLive2DInitialization,
   scheduleLive2DInitialization,
@@ -31,6 +33,34 @@ const DRAG_DISTANCE_THRESHOLD_PX = 5; // Min distance to be considered a drag
 const MIN_MODEL_SCALE = 0.1;
 const WINDOW_MAX_MODEL_SCALE = 5.0;
 const PET_INITIAL_MODEL_SCALE_MAX = 0.85;
+const FLIRT_TRIGGER_WINDOW_MS = 60 * 1000;
+const FLIRT_TRIGGER_COUNT = 4;
+const FLIRT_TRIGGER_COOLDOWN_MS = 15 * 1000;
+const FLIRT_TRIGGER_LINES = [
+  "哎呀，1分钟里偷偷摸我四次啦，哥哥你这是在故意撩我嘛？我会害羞的哦。",
+  "喂喂喂，这么短时间逗我四次，坏心思都写脸上啦，要不要我也反过来撩你一下？",
+  "你今天很会嘛，一分钟内逗我四回，是想让我主动黏你一点嘛，嗯？",
+];
+
+async function reportLive2DDragDebug(stage: string, extra: Record<string, unknown> = {}) {
+  try {
+    await fetch("/api/debug/live2d-drag", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        stage,
+        pageUrl: typeof window !== "undefined" ? window.location.href : "",
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+        ts: Date.now(),
+        ...extra,
+      }),
+    });
+  } catch {
+    // ignore debug-report failures
+  }
+}
 
 function resolveModelScale(rawScale: number | undefined, isPet: boolean): number | undefined {
   if (rawScale === undefined || Number.isNaN(rawScale)) {
@@ -119,6 +149,8 @@ export const useLive2DModel = ({
   const initializeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isHoveringModelRef = useRef(false);
   const electronApi = (window as any).electron;
+  const flirtDragTimestampsRef = useRef<number[]>([]);
+  const flirtCooldownUntilRef = useRef<number>(0);
 
   // --- State for Tap vs Drag ---
   const mouseDownTimeRef = useRef<number>(0);
@@ -277,9 +309,16 @@ export const useLive2DModel = ({
     const isHitOnModel = model.isHitOnModel(modelX, modelY);
     // --- End Check ---
 
-    // Only start drag sequence for right mouse button (button 2)
-    // Left button (button 0) is used for gaze tracking only
-    if ((hitAreaName !== null || isHitOnModel) && e.button === 2) {
+    // Start drag sequence when interacting with the model.
+    // Support touch and normal primary-button dragging, not only right click.
+    if ((hitAreaName !== null || isHitOnModel) && e.button !== 1) {
+      reportLive2DDragDebug("pointer_down_on_model", {
+        button: e.button,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        hitAreaName,
+        isHitOnModel,
+      });
       // Record potential tap/drag start
       mouseDownTimeRef.current = Date.now();
       mouseDownPosRef.current = { x: e.clientX, y: e.clientY }; // Use clientX/Y for distance check
@@ -291,6 +330,14 @@ export const useLive2DModel = ({
         const matrix = model._modelMatrix.getArray();
         modelStartPos.current = { x: matrix[12], y: matrix[13] };
       }
+    } else {
+      reportLive2DDragDebug("pointer_down_missed_model", {
+        button: e.button,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        hitAreaName,
+        isHitOnModel,
+      });
     }
   }, [canvasRef, modelInfo]);
 
@@ -308,6 +355,14 @@ export const useLive2DModel = ({
 
       // Check if it's a drag (moved enough distance OR held long enough while moving slightly)
       if (distanceMoved > DRAG_DISTANCE_THRESHOLD_PX || (timeElapsed > TAP_DURATION_THRESHOLD_MS && distanceMoved > 1)) {
+        reportLive2DDragDebug("drag_started", {
+          timeElapsed,
+          distanceMoved,
+          startX: mouseDownPosRef.current.x,
+          startY: mouseDownPosRef.current.y,
+          currentX: e.clientX,
+          currentY: e.clientY,
+        });
         isPotentialTapRef.current = false; // It's a drag, not a tap
         setIsDragging(true);
 
@@ -387,13 +442,62 @@ export const useLive2DModel = ({
   }, [isPet, isDragging, electronApi, canvasRef]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    const maybeTriggerFlirtyReply = () => {
+      const state = useAppStore.getState();
+      const sessionId = state.currentSessionId;
+      if (!sessionId) {
+        reportLive2DDragDebug("trigger_skipped_no_session");
+        return;
+      }
+
+      const now = Date.now();
+      if (now < flirtCooldownUntilRef.current) {
+        reportLive2DDragDebug("trigger_skipped_cooldown", {
+          cooldownRemainingMs: flirtCooldownUntilRef.current - now,
+        });
+        return;
+      }
+
+      const recent = flirtDragTimestampsRef.current.filter((timestamp) => now - timestamp <= FLIRT_TRIGGER_WINDOW_MS);
+      recent.push(now);
+      flirtDragTimestampsRef.current = recent;
+      reportLive2DDragDebug("drag_count_updated", {
+        count: recent.length,
+        windowMs: FLIRT_TRIGGER_WINDOW_MS,
+        timestamps: recent,
+      });
+
+      if (recent.length < FLIRT_TRIGGER_COUNT) {
+        return;
+      }
+
+      flirtCooldownUntilRef.current = now + FLIRT_TRIGGER_COOLDOWN_MS;
+      flirtDragTimestampsRef.current = [];
+
+      const text = FLIRT_TRIGGER_LINES[Math.floor(Math.random() * FLIRT_TRIGGER_LINES.length)];
+      reportLive2DDragDebug("trigger_fired", {
+        text,
+        cooldownMs: FLIRT_TRIGGER_COOLDOWN_MS,
+      });
+      state.appendMessageForSession(sessionId, createOptimisticChatMessage({
+        sessionId,
+        role: "assistant",
+        text,
+        source: "chat",
+      }));
+    };
     const adapter = (window as any).getLAppAdapter?.();
     const model = adapter?.getModel();
     const view = LAppDelegate.getInstance().getView();
 
     if (isDragging) {
+      reportLive2DDragDebug("drag_finished", {
+        clientX: e.clientX,
+        clientY: e.clientY,
+      });
       // Finalize drag
       setIsDragging(false);
+      maybeTriggerFlirtyReply();
       if (adapter) {
         const currentModel = adapter.getModel(); // Re-get model in case adapter changed
         if (currentModel && currentModel._modelMatrix) {
@@ -405,6 +509,10 @@ export const useLive2DModel = ({
         }
       }
     } else if (isPotentialTapRef.current && adapter && model && view && canvasRef.current) {
+      reportLive2DDragDebug("pointer_up_without_drag", {
+        clientX: e.clientX,
+        clientY: e.clientY,
+      });
       // --- Tap Motion Logic ---
       const timeElapsed = Date.now() - mouseDownTimeRef.current;
       const deltaX = e.clientX - mouseDownPosRef.current.x;
@@ -576,9 +684,36 @@ Live2DDebug.playRandomMotion("")  // Play random motion from default group
     console.log('Live2D Debug functions exposed to window.Live2DDebug');
     console.log('Type Live2DDebug.help() for usage information');
 
+    // Expose function for Live2D delegate to trigger tease messages in the normal chat flow
+    (window as any).triggerLive2DTeaseMessage = (message: string) => {
+      const state = useAppStore.getState();
+      const sessionId = state.currentSessionId || state.sessions?.[0]?.id || null;
+
+      console.log('[triggerLive2DTeaseMessage] Triggered with message:', message, {
+        currentSessionId: state.currentSessionId,
+        fallbackSessionId: state.sessions?.[0]?.id,
+        resolvedSessionId: sessionId,
+      });
+
+      if (!sessionId) {
+        console.warn('[triggerLive2DTeaseMessage] No session available, skipping chat append');
+        return;
+      }
+
+      state.appendMessageForSession(sessionId, createOptimisticChatMessage({
+        sessionId,
+        role: 'assistant',
+        text: message,
+        source: 'chat',
+      }));
+
+      console.log('[triggerLive2DTeaseMessage] Message appended to store');
+    };
+
     // Cleanup function
     return () => {
       delete (window as any).Live2DDebug;
+      delete (window as any).triggerLive2DTeaseMessage;
     };
   }, []);
 

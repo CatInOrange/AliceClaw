@@ -240,6 +240,17 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
       buttons: event.buttons,
       pointerType: event.pointerType,
     });
+
+    if (event.pointerType === 'touch') {
+      const view = LAppDelegate.getInstance().getView();
+      if (view?.onTouchesBegan) {
+        const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+        const rect = canvas?.getBoundingClientRect();
+        if (rect) {
+          view.onTouchesBegan(event.clientX - rect.left, event.clientY - rect.top);
+        }
+      }
+    }
   });
   window.addEventListener("pointermove", (event) => {
     setTrackedPointerPosition({
@@ -248,6 +259,17 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
       buttons: event.buttons,
       pointerType: event.pointerType,
     });
+
+    if (event.pointerType === 'touch') {
+      const view = LAppDelegate.getInstance().getView();
+      if (view?.onTouchesMoved) {
+        const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+        const rect = canvas?.getBoundingClientRect();
+        if (rect) {
+          view.onTouchesMoved(event.clientX - rect.left, event.clientY - rect.top);
+        }
+      }
+    }
   });
   // Also track pointerup to handle mouse release outside window
   window.addEventListener("pointerup", (event) => {
@@ -257,6 +279,19 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
       buttons: event.buttons,
       pointerType: event.pointerType,
     });
+
+    if (event.pointerType === 'touch') {
+      const view = LAppDelegate.getInstance().getView();
+      if (view?.onTouchesEnded) {
+        const canvas = document.getElementById("canvas") as HTMLCanvasElement | null;
+        const rect = canvas?.getBoundingClientRect();
+        if (rect) {
+          view.onTouchesEnded(event.clientX - rect.left, event.clientY - rect.top);
+        }
+      }
+      return;
+    }
+
     // Fix: Reset drag to 0 when pointer is released
     const manager = getAdapter()?.getMgr?.();
     if (manager && typeof manager.onDrag === 'function') {
@@ -280,6 +315,10 @@ export function applyFocusCenter(config: FocusCenterConfig | null | undefined): 
   const manager = getAdapter()?.getMgr?.();
   const view = LAppDelegate.getInstance().getView();
   if (!canvas || !model || (!manager && !view)) {
+    return;
+  }
+
+  if (lastPointer.pointerType === 'touch') {
     return;
   }
 

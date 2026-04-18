@@ -1,0 +1,25 @@
+{
+  "timestamp": "20260418_090319",
+  "data": {
+    "type": "dragY",
+    "localY": 973.2786602973938,
+    "headY": -460.9754785156249,
+    "biasY": 701.4844238281249,
+    "focusedY": 1674.7630841255186,
+    "scaledY": 5861.670794439315,
+    "dragY": -5.105907395988822,
+    "dragX": 0.1503858455177003,
+    "pointerX": 204.88034057617188,
+    "pointerY": 974.1358032226562,
+    "canvasWidth": 578.2857666015625,
+    "canvasHeight": 2004.2412109375,
+    "_deviceToScreen_tr0": 0.0010416667209938169,
+    "_deviceToScreen_tr5": -0.0010416667209938169,
+    "_deviceToScreen_tr12": -0.28854167461395264,
+    "_deviceToScreen_tr13": 1,
+    "_viewMatrix_tr0": 1,
+    "_viewMatrix_tr5": 1,
+    "_viewMatrix_tr12": 0,
+    "_viewMatrix_tr13": 0
+  }
+}

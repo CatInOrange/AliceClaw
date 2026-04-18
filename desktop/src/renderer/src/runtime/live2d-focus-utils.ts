@@ -51,8 +51,8 @@ export function applyLive2DFocus({
     && typeof view?.transformViewX === "function"
     && typeof view?.transformViewY === "function"
   ) {
-    const scaledX = localX * Number(devicePixelRatio || 1);
-    const scaledY = focusedY * Number(devicePixelRatio || 1);
+    const scaledX = localX;
+    const scaledY = focusedY;
     const dragX = view.transformViewX(scaledX);
     const dragY = view.transformViewY(scaledY);
 

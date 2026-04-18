@@ -206,13 +206,15 @@ let lastPointer: {
   x: number;
   y: number;
   buttons: number;
+  pointerType?: string | null;
 } = {
   x: typeof window !== "undefined" ? window.innerWidth * 0.5 : 0,
   y: typeof window !== "undefined" ? window.innerHeight * 0.5 : 0,
   buttons: 0,
+  pointerType: null,
 };
 
-export function setTrackedPointerPosition(pointer: { x: number; y: number; buttons?: number } | null | undefined): void {
+export function setTrackedPointerPosition(pointer: { x: number; y: number; buttons?: number; pointerType?: string | null } | null | undefined): void {
   if (
     !pointer
     || !Number.isFinite(Number(pointer.x))
@@ -225,6 +227,7 @@ export function setTrackedPointerPosition(pointer: { x: number; y: number; butto
     x: Number(pointer.x),
     y: Number(pointer.y),
     buttons: pointer.buttons ?? lastPointer.buttons,
+    pointerType: pointer.pointerType ?? lastPointer.pointerType ?? null,
   };
 }
 
@@ -235,6 +238,7 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
       x: event.clientX,
       y: event.clientY,
       buttons: event.buttons,
+      pointerType: event.pointerType,
     });
   });
   window.addEventListener("pointermove", (event) => {
@@ -242,6 +246,7 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
       x: event.clientX,
       y: event.clientY,
       buttons: event.buttons,
+      pointerType: event.pointerType,
     });
   });
   // Also track pointerup to handle mouse release outside window
@@ -250,6 +255,7 @@ if (typeof window !== "undefined" && !(window as any).__OPENCLAW_POINTER_TRACKIN
       x: event.clientX,
       y: event.clientY,
       buttons: event.buttons,
+      pointerType: event.pointerType,
     });
     // Fix: Reset drag to 0 when pointer is released
     const manager = getAdapter()?.getMgr?.();

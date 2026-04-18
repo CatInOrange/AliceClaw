@@ -57,33 +57,48 @@ export function applyLive2DFocus({
     const dragY = view.transformViewY(scaledY);
 
     // DEBUG: Send comprehensive info to backend
-    const debugData: Record<string, number | null> = {
-      // Pointer and canvas info
-      pointerX_raw: pointer.x,
-      pointerY_raw: pointer.y,
+    const touchLike = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    const pointerType = pointer?.pointerType ?? null;
+    const debugData: Record<string, string | number | boolean | null> = {
+      type: 'dragY',
+      source: 'applyLive2DFocus',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      isTouchDevice: touchLike,
+      pointerType,
+      buttons: Number(pointer?.buttons ?? 0),
+
+      // Viewport and canvas info
+      windowInnerWidth: typeof window !== 'undefined' ? Number(window.innerWidth) : null,
+      windowInnerHeight: typeof window !== 'undefined' ? Number(window.innerHeight) : null,
       canvasLeft: Number(canvasRect.left || 0),
       canvasTop: Number(canvasRect.top || 0),
       canvasWidth: width,
       canvasHeight: height,
-      
+
+      // Raw pointer info
+      pointerX_raw: Number(pointer.x),
+      pointerY_raw: Number(pointer.y),
+
       // Calculated local position
+      rendererWidth,
       localX,
       localY,
-      
-      // Config
+      focusedY,
+
+      // Config/model info
       configHeadRatio: Number(config?.headRatio ?? 0.25),
       modelY: Number(model?.y),
       modelHeight: Number(model?.height),
-      focusedY,
-      
+
       // Final drag values
       dragX,
       dragY,
-      
+
       // Scaling
       devicePixelRatio: Number(devicePixelRatio || 1),
+      scaledX,
       scaledY,
-      
+
       // Matrix values
       _deviceToScreen_tr0: view._deviceToScreen?._tr?.[0] ?? 0,
       _deviceToScreen_tr5: view._deviceToScreen?._tr?.[5] ?? 0,

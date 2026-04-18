@@ -136,7 +136,8 @@ export function applyLive2DFocus({
     }
 
     if (Number.isFinite(Number(dragX)) && Number.isFinite(Number(dragY))) {
-      manager.onDrag(dragX, dragY);
+      const finalDragY = pointerType === 'touch' ? -dragY : dragY;
+      manager.onDrag(dragX, finalDragY);
       return true;
     }
   }

@@ -79,9 +79,6 @@ export class LAppView {
 
     this._viewMatrix.setScreenRect(left, right, bottom, top); // デバイスに対応する画面の範囲。 Xの左端、Xの右端、Yの下端、Yの上端
     this._viewMatrix.scale(LAppDefine.ViewScale, LAppDefine.ViewScale);
-    // Fix for gaze tracking: compensate for _deviceToScreen's negative Y scale
-    // This makes invertTransformY correctly invert Y, so dragY matches mouse direction
-    this._viewMatrix.scale(1, -1);
 
     this._deviceToScreen.loadIdentity();
     if (width > height) {

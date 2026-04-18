@@ -53,10 +53,8 @@ export function applyLive2DFocus({
   ) {
     const scaledX = localX * Number(devicePixelRatio || 1);
     const scaledY = focusedY * Number(devicePixelRatio || 1);
-    const centerX = width * 0.5;
-    const centerY = height * 0.5;
-    const dragX = clamp((localX - centerX) / centerX, -1, 1);
-    const dragY = clamp((localY - centerY) / centerY, -1, 1);
+    const dragX = view.transformViewX(scaledX);
+    const dragY = view.transformViewY(scaledY);
 
     // DEBUG: Send comprehensive info to backend
     const debugData: Record<string, number | null> = {
@@ -84,10 +82,7 @@ export function applyLive2DFocus({
       
       // Scaling
       devicePixelRatio: Number(devicePixelRatio || 1),
-      scaledX,
       scaledY,
-      centerX,
-      centerY,
       
       // Matrix values
       _deviceToScreen_tr0: view._deviceToScreen?._tr?.[0] ?? 0,

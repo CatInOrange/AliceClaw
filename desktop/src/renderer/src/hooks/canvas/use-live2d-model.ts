@@ -693,6 +693,7 @@ Live2DDebug.playRandomMotion("")  // Play random motion from default group
         currentSessionId: state.currentSessionId,
         fallbackSessionId: state.sessions?.[0]?.id,
         resolvedSessionId: sessionId,
+        sessionCount: state.sessions?.length || 0,
       });
 
       if (!sessionId) {
@@ -700,14 +701,29 @@ Live2DDebug.playRandomMotion("")  // Play random motion from default group
         return;
       }
 
-      state.appendMessageForSession(sessionId, createOptimisticChatMessage({
+      if (state.currentSessionId !== sessionId) {
+        state.setCurrentSessionId(sessionId);
+        console.log('[triggerLive2DTeaseMessage] Synced currentSessionId before append:', sessionId);
+      }
+
+      const optimisticMessage = createOptimisticChatMessage({
         sessionId,
         role: 'assistant',
         text: message,
         source: 'chat',
-      }));
+      });
 
-      console.log('[triggerLive2DTeaseMessage] Message appended to store');
+      state.appendMessageForSession(sessionId, optimisticMessage);
+
+      requestAnimationFrame(() => {
+        const verifyState = useAppStore.getState();
+        console.log('[triggerLive2DTeaseMessage] Post-append verification:', {
+          currentSessionId: verifyState.currentSessionId,
+          targetSessionId: sessionId,
+          targetMessageCount: verifyState.messagesBySession?.[sessionId]?.length || 0,
+          appendedMessageId: optimisticMessage.id,
+        });
+      });
     };
 
     // Cleanup function

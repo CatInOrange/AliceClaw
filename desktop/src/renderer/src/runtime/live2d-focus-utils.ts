@@ -35,11 +35,7 @@ export function applyLive2DFocus({
     width
   );
   const localY = clamp(Number(pointer.y) - Number(canvasRect.top || 0), 0, height);
-  const headRatio = clamp(Number(config?.headRatio ?? 0.25), 0, 1);
-  const headY = Number(model?.y || height * 0.5) - Number(model?.height || height) * headRatio;
-  const viewCenterY = height * 0.5;
-  const biasY = clamp(viewCenterY - headY, -height * 0.35, height * 0.35);
-  const focusedY = localY + biasY;
+  const focusedY = localY;
 
   if (typeof model?.focus === "function") {
     model.focus(localX, focusedY, false);
@@ -60,19 +56,43 @@ export function applyLive2DFocus({
     const dragX = view.transformViewX(scaledX);
     const dragY = view.transformViewY(scaledY);
 
-    // DEBUG: Send dragY info to backend instead of console.log
-    const debugData: Record<string, number> = {
-      localY,
-      headY,
-      biasY,
-      focusedY,
-      scaledY,
-      dragY,
-      dragX,
-      pointerX: pointer.x,
-      pointerY: pointer.y,
+    // DEBUG: Send comprehensive info to backend
+    const debugData: Record<string, number | null> = {
+      // Pointer and canvas info
+      pointerX_raw: pointer.x,
+      pointerY_raw: pointer.y,
+      canvasLeft: Number(canvasRect.left || 0),
+      canvasTop: Number(canvasRect.top || 0),
       canvasWidth: width,
-      canvasHeight: height
+      canvasHeight: height,
+      
+      // Calculated local position
+      localX,
+      localY,
+      
+      // Config
+      configHeadRatio: Number(config?.headRatio ?? 0.25),
+      modelY: Number(model?.y),
+      modelHeight: Number(model?.height),
+      focusedY,
+      
+      // Final drag values
+      dragX,
+      dragY,
+      
+      // Scaling
+      devicePixelRatio: Number(devicePixelRatio || 1),
+      scaledY,
+      
+      // Matrix values
+      _deviceToScreen_tr0: view._deviceToScreen?._tr?.[0] ?? 0,
+      _deviceToScreen_tr5: view._deviceToScreen?._tr?.[5] ?? 0,
+      _deviceToScreen_tr12: view._deviceToScreen?._tr?.[12] ?? 0,
+      _deviceToScreen_tr13: view._deviceToScreen?._tr?.[13] ?? 0,
+      _viewMatrix_tr0: view._viewMatrix?._tr?.[0] ?? 0,
+      _viewMatrix_tr5: view._viewMatrix?._tr?.[5] ?? 0,
+      _viewMatrix_tr12: view._viewMatrix?._tr?.[12] ?? 0,
+      _viewMatrix_tr13: view._viewMatrix?._tr?.[13] ?? 0,
     };
     // Add matrix values for debugging
     if (view._deviceToScreen) {
@@ -101,7 +121,9 @@ export function applyLive2DFocus({
     }
 
     if (Number.isFinite(Number(dragX)) && Number.isFinite(Number(dragY))) {
-      manager.onDrag(dragX, dragY);
+      // Negate dragY to correct for coordinate system inversion
+      // Live2D model interprets negative Y as "up", but we want gaze to follow mouse Y direction
+      manager.onDrag(dragX, -dragY);
       return true;
     }
   }

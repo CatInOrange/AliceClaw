@@ -218,6 +218,10 @@ function WindowShell() {
   const { confName } = useConfig();
   const [sidebarPanel, setSidebarPanel] = useState<"sessions" | "settings" | null>(null);
   const [windowPlusOpen, setWindowPlusOpen] = useState(false);
+  const [viewportSize, setViewportSize] = useState({
+    width: typeof window !== "undefined" ? window.innerWidth : 1280,
+    height: typeof window !== "undefined" ? window.innerHeight : 720,
+  });
   const windowFileInputRef = useRef<HTMLInputElement>(null);
   const manifest = useAppStore((state) => state.manifest);
   const stageActionPanelOpen = useAppStore((state) => state.stageActionPanelOpen);
@@ -232,6 +236,20 @@ function WindowShell() {
     configName: confName,
     manifestName: manifest?.model.name,
   });
+  const isPortraitLayout = !isElectron && viewportSize.height > viewportSize.width;
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleWindowUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -261,6 +279,7 @@ function WindowShell() {
         flex="1"
         position="relative"
         overflow="hidden"
+        direction={isPortraitLayout ? "column" : "row"}
         borderRadius={isElectron ? "26px" : "0"}
         border="1px solid"
         borderColor={lunariaColors.border}
@@ -269,7 +288,12 @@ function WindowShell() {
       >
         {isElectron ? <TitleBar /> : null}
 
-        <Box flex="1" position="relative" overflow="hidden">
+        <Box
+          flex={isPortraitLayout ? "0 0 46vh" : "1"}
+          minH={isPortraitLayout ? "280px" : "0"}
+          position="relative"
+          overflow="hidden"
+        >
           <Box
             position="absolute"
             inset={isElectron ? "30px 0 0 0" : "0"}
@@ -281,7 +305,7 @@ function WindowShell() {
               <Live2D />
             </Box>
 
-            <Box position="absolute" top="24px" right="24px" zIndex="10">
+            <Box position="absolute" top={isPortraitLayout ? "14px" : "24px"} right={isPortraitLayout ? "14px" : "24px"} zIndex="10">
               <Text
                 px="3.5"
                 py="2"
@@ -301,11 +325,11 @@ function WindowShell() {
               <Box
                 position="absolute"
                 left="50%"
-                bottom="54px"
+                bottom={isPortraitLayout ? "18px" : "54px"}
                 transform="translateX(-50%)"
-                maxW="min(62vw, 720px)"
-                px="5"
-                py="4"
+                maxW={isPortraitLayout ? "calc(100vw - 28px)" : "min(62vw, 720px)"}
+                px={isPortraitLayout ? "4" : "5"}
+                py={isPortraitLayout ? "3" : "4"}
                 {...lunariaPanelStyles}
                 zIndex="10"
               >
@@ -318,20 +342,21 @@ function WindowShell() {
         </Box>
 
         <Box
-          w={{ base: "400px", lg: "430px" }}
-          minW={{ base: "400px", lg: "430px" }}
-          h="100%"
-          px="5"
-          pt={isElectron ? "42px" : "4"}
-          pb="5"
+          w={isPortraitLayout ? "100%" : { base: "400px", lg: "430px" }}
+          minW={isPortraitLayout ? "0" : { base: "400px", lg: "430px" }}
+          h={isPortraitLayout ? "54vh" : "100%"}
+          px={isPortraitLayout ? "4" : "5"}
+          pt={isElectron ? "42px" : isPortraitLayout ? "3" : "4"}
+          pb={isPortraitLayout ? "4" : "5"}
           bg="linear-gradient(180deg, #fbf7f3 0%, #f4ece4 100%)"
-          borderLeft="1px solid"
+          borderLeft={isPortraitLayout ? "0" : "1px solid"}
+          borderTop={isPortraitLayout ? "1px solid" : "0"}
           borderColor={lunariaColors.border}
           position="relative"
           zIndex="5"
         >
           <Flex h="100%" direction="column" gap="0">
-            <HStack justify="space-between" align="center" pb="4">
+            <HStack justify="space-between" align="center" pb={isPortraitLayout ? "3" : "4"}>
               <Box>
                 <Text fontSize="lg" {...lunariaHeadingStyles}>
                   {assistantDisplayName}
@@ -365,7 +390,7 @@ function WindowShell() {
             </HStack>
 
             {sessionsOpen && !settingsOpen ? (
-              <Box borderTop="1px solid" borderColor={lunariaColors.border} pt="4" pb="3">
+              <Box borderTop="1px solid" borderColor={lunariaColors.border} pt="4" pb="3" maxH={isPortraitLayout ? "22vh" : "unset"} overflowY="auto">
                 <Text {...lunariaEyebrowStyles}>{t("shell.sessions")}</Text>
                 <SessionsPanel />
               </Box>
@@ -378,13 +403,13 @@ function WindowShell() {
                 <Box
                   h="100%"
                   pt={sessionsOpen ? "1" : "2"}
-                  pb="4"
+                  pb={isPortraitLayout ? "2" : "4"}
                   display="flex"
                   flexDirection="column"
                   borderTop="1px solid"
                   borderColor={lunariaColors.border}
                 >
-                  <HStack justify="space-between" mb="3" pt="4">
+                  <HStack justify="space-between" mb="3" pt={isPortraitLayout ? "3" : "4"}>
                     <Box>
                       <Text {...lunariaEyebrowStyles}>{t("shell.conversation")}</Text>
                     </Box>

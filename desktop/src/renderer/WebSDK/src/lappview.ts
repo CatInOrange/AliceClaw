@@ -229,6 +229,8 @@ export class LAppView {
 
     const live2DManager: LAppLive2DManager = LAppLive2DManager.getInstance();
 
+    viewY = -viewY;
+
     fetch('/api/debug/webgl', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},

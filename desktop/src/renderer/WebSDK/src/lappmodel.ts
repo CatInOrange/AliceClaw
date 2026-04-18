@@ -626,17 +626,12 @@ export class LAppModel extends CubismUserModel {
   public getDraggingX(): number { return this._dragX; }
   public getDraggingY(): number { return this._dragY; }
 
-  // 手指抬起时强制归零的标志
-  private _touchEndedForReset: boolean = false;
-
-  // 手指抬起时调用此方法，通知 update() 重置拖拽值
   public resetDragOnTouchEnd(): void {
-    this._touchEndedForReset = true;
+    // no-op: keep native drag manager behavior
   }
 
-  // 新的触摸开始时调用此方法，清除重置标志，允许正常拖拽
   public clearTouchEndedFlag(): void {
-    this._touchEndedForReset = false;
+    // no-op: keep native drag manager behavior
   }
 
   public get idParamAngleX(): CubismIdHandle { return this._idParamAngleX; }
@@ -655,23 +650,6 @@ export class LAppModel extends CubismUserModel {
     this._dragManager.update(deltaTimeSeconds);
     this._dragX = this._dragManager.getX();
     this._dragY = this._dragManager.getY();
-
-    // 安全网：手指抬起后强制归零
-    // 只有当 drag 值确实接近 0 时才清除标志，否则持续重置
-    if (this._touchEndedForReset) {
-      this._dragX = 0;
-      this._dragY = 0;
-      // 注意：不需要调用 dragManager 的方法，因为 _dragX/_dragY 是独立的
-      // 检查 dragManager 的实际值，只有当它也接近 0 时才清除标志
-      const managerX = this._dragManager.getX();
-      const managerY = this._dragManager.getY();
-      if (Math.abs(managerX) < 0.01 && Math.abs(managerY) < 0.01) {
-        this._touchEndedForReset = false;
-        LAppDelegate.getInstance().showTouchDebug('touch ended - drag stabilized at (0,0)');
-      } else {
-        LAppDelegate.getInstance().showTouchDebug(`touch ended - forcing reset (manager: ${managerX.toFixed(2)}, ${managerY.toFixed(2)})`);
-      }
-    }
 
     // 调试：每帧显示 drag 目标值和实际值
     const targetX = (this._dragManager as any)._faceTargetX;

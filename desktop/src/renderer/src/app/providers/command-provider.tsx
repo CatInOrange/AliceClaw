@@ -791,6 +791,31 @@ export function RendererCommandProvider({
       if (!shouldApply()) {
         return;
       }
+      const err = error as Error;
+      console.error('[reconnect] failed', {
+        backendUrl: normalizedBackendUrl,
+        error,
+        errorName: err?.name || 'Error',
+        errorMessage: err?.message || String(error),
+      });
+      try {
+        void fetch('/api/debug/frontend-error', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ts: Date.now(),
+            source: 'frontend-reconnect',
+            backendUrl: normalizedBackendUrl,
+            errorName: err?.name || 'Error',
+            errorMessage: err?.message || String(error),
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        // noop
+      }
       useAppStore.getState().setConnectionState("error");
       toaster.create({
         title: `连接后端失败: ${error}`,

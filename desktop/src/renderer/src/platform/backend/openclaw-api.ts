@@ -243,17 +243,66 @@ export function buildBackendUrl(baseUrl: string, path: string): string {
   return `${normalizedBase}${normalizedPath}`;
 }
 
+function reportFrontendFetchError(details: Record<string, unknown>): void {
+  try {
+    console.error('[frontend-fetch-error]', details);
+  } catch {
+    // noop
+  }
+
+  try {
+    if (typeof window !== 'undefined') {
+      const payload = JSON.stringify({
+        ts: Date.now(),
+        source: 'frontend-fetch',
+        ...details,
+      });
+      void fetch('/api/debug/frontend-error', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {
+    // noop
+  }
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers || {}),
+      },
+    });
+  } catch (error) {
+    const err = error as Error;
+    reportFrontendFetchError({
+      kind: 'request-json-fetch-throw',
+      url,
+      method: init?.method || 'GET',
+      errorName: err?.name || 'Error',
+      errorMessage: err?.message || String(error),
+    });
+    throw error;
+  }
 
   if (!response.ok) {
     const text = await response.text();
+    reportFrontendFetchError({
+      kind: 'request-json-non-ok',
+      url,
+      method: init?.method || 'GET',
+      status: response.status,
+      statusText: response.statusText,
+      responseText: text,
+    });
     throw new Error(text || `${response.status} ${response.statusText}`);
   }
 
@@ -351,17 +400,47 @@ export async function streamChat(
     signal?: AbortSignal;
   },
 ): Promise<void> {
-  const response = await fetch(buildBackendUrl(baseUrl, '/api/chat/stream'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-    signal: handlers.signal,
-  });
+  const url = buildBackendUrl(baseUrl, '/api/chat/stream');
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: handlers.signal,
+    });
+  } catch (error) {
+    const err = error as Error;
+    reportFrontendFetchError({
+      kind: 'chat-stream-fetch-throw',
+      url,
+      method: 'POST',
+      sessionId: body.sessionId,
+      modelId: body.modelId,
+      providerId: body.providerId,
+      messageSource: body.messageSource || 'chat',
+      errorName: err?.name || 'Error',
+      errorMessage: err?.message || String(error),
+    });
+    throw error;
+  }
 
   if (!response.ok) {
     const text = await response.text();
+    reportFrontendFetchError({
+      kind: 'chat-stream-non-ok',
+      url,
+      method: 'POST',
+      sessionId: body.sessionId,
+      modelId: body.modelId,
+      providerId: body.providerId,
+      messageSource: body.messageSource || 'chat',
+      status: response.status,
+      statusText: response.statusText,
+      responseText: text,
+    });
     throw new Error(text || `${response.status} ${response.statusText}`);
   }
 
@@ -418,6 +497,13 @@ export function openEventsStream(
   };
 
   eventSource.onerror = () => {
+    reportFrontendFetchError({
+      kind: 'events-stream-error',
+      url: streamUrl,
+      method: 'GET',
+      since: options.since || 0,
+      readyState: eventSource.readyState,
+    });
     options.onError?.();
   };
 
@@ -448,16 +534,44 @@ export async function requestTts(
     [key: string]: unknown;
   },
 ): Promise<Blob> {
-  const response = await fetch(buildBackendUrl(baseUrl, '/api/tts'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+  const url = buildBackendUrl(baseUrl, '/api/tts');
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    const err = error as Error;
+    reportFrontendFetchError({
+      kind: 'tts-fetch-throw',
+      url,
+      method: 'POST',
+      provider: body.provider,
+      mode: body.mode,
+      textLength: String(body.text || '').length,
+      errorName: err?.name || 'Error',
+      errorMessage: err?.message || String(error),
+    });
+    throw error;
+  }
 
   if (!response.ok) {
     const text = await response.text();
+    reportFrontendFetchError({
+      kind: 'tts-non-ok',
+      url,
+      method: 'POST',
+      provider: body.provider,
+      mode: body.mode,
+      textLength: String(body.text || '').length,
+      status: response.status,
+      statusText: response.statusText,
+      responseText: text,
+    });
     throw new Error(text || `${response.status} ${response.statusText}`);
   }
 

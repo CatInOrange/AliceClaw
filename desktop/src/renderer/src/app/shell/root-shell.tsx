@@ -306,9 +306,9 @@ function WindowShell() {
         {isElectron ? <TitleBar /> : null}
 
         <Box
-          flex={isMobileWeb ? "1.35" : "1"}
-          minH={isMobileWeb ? "56dvh" : (isPortraitLayout ? "300px" : "0")}
-          maxH={isMobileWeb ? "70dvh" : (isPortraitLayout ? "65vh" : "none")}
+          flex={isMobileWeb ? "1.5" : "1"}
+          minH={isMobileWeb ? "100dvh" : (isPortraitLayout ? "300px" : "0")}
+          maxH={isMobileWeb ? "none" : (isPortraitLayout ? "65vh" : "none")}
           position="relative"
           overflow="hidden"
         >
@@ -319,27 +319,43 @@ function WindowShell() {
             backgroundSize="cover"
             backgroundPosition="center"
           >
-            <Box position="absolute" inset="0">
-              <Live2D />
+            <Box
+              position="absolute"
+              inset="0"
+              display="flex"
+              alignItems="stretch"
+              justifyContent={isMobileWeb ? "center" : "flex-start"}
+              pr={isMobileWeb ? "0" : "min(30vw, 420px)"}
+            >
+              <Box flex="1" minW="0" h="100%">
+                <Live2D />
+              </Box>
             </Box>
 
           </Box>
         </Box>
 
         <Box
-          w={isMobileWeb ? "100%" : (isPortraitLayout ? "100%" : { base: "400px", lg: "430px" })}
-          minW={isMobileWeb ? "0" : (isPortraitLayout ? "0" : { base: "400px", lg: "430px" })}
-          h={isMobileWeb ? "auto" : (isPortraitLayout ? "35vh" : "100%")}
-          minH={isMobileWeb ? "30dvh" : undefined}
+          w={isMobileWeb ? "calc(100% - 24px)" : (isPortraitLayout ? "100%" : { base: "360px", lg: "400px" })}
+          minW={isMobileWeb ? "0" : (isPortraitLayout ? "0" : { base: "360px", lg: "400px" })}
+          h={isMobileWeb ? "44dvh" : (isPortraitLayout ? "35vh" : "calc(100% - 32px)")}
+          minH={isMobileWeb ? "280px" : undefined}
+          maxH={isMobileWeb ? "48dvh" : "calc(100% - 32px)"}
           px={isMobileWeb ? "3.5" : (isPortraitLayout ? "4" : "5")}
           pt={isElectron ? "42px" : isMobileWeb ? "2.5" : (isPortraitLayout ? "3" : "4")}
           pb={isMobileWeb ? "calc(env(safe-area-inset-bottom, 0px) + 12px)" : (isPortraitLayout ? "3" : "5")}
-          bg="linear-gradient(180deg, #fbf7f3 0%, #f4ece4 100%)"
+          bg="linear-gradient(180deg, rgba(251,247,243,0.94) 0%, rgba(244,236,228,0.96) 100%)"
           borderLeft={isPortraitLayout ? "0" : "1px solid"}
           borderTop={isPortraitLayout ? "1px solid" : "0"}
           borderColor={lunariaColors.border}
-          position="relative"
-          zIndex="5"
+          position={isMobileWeb ? "absolute" : "absolute"}
+          right={isMobileWeb ? "12px" : "16px"}
+          bottom={isMobileWeb ? "12px" : "16px"}
+          zIndex="8"
+          borderRadius={isMobileWeb ? "22px" : "26px"}
+          boxShadow="0 20px 60px rgba(88, 60, 46, 0.18)"
+          backdropFilter="blur(14px)"
+          overflow="hidden"
         >
           <Flex h="100%" direction="column" gap="0">
             <HStack justify="flex-end" align="center" pb={isMobileWeb ? "2" : (isPortraitLayout ? "3" : "4") }>

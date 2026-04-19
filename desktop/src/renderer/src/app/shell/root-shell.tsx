@@ -346,8 +346,8 @@ function WindowShell() {
 
         <Box
           position="absolute"
-          top={isPortraitLayout ? "14px" : "18px"}
           right={isPortraitLayout ? "14px" : "18px"}
+          bottom={isMobileWeb ? "84px" : "88px"}
           zIndex="24"
         >
           <HStack justify="flex-end" align="center" spacing="2">
@@ -396,7 +396,7 @@ function WindowShell() {
               <Box
                 position="absolute"
                 right={isMobileWeb ? "8px" : "14px"}
-                bottom={isMobileWeb ? "120px" : "116px"}
+                top={isElectron ? "54px" : "58px"}
                 w={isMobileWeb ? "138px" : "156px"}
                 minH={isMobileWeb ? "102px" : "116px"}
                 px="3"

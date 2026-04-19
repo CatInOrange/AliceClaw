@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260419_103742",
+  "data": {
+    "stage": "drag_started",
+    "pageUrl": "http://43.156.5.177:8080/",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "ts": 1776566259061,
+    "timeElapsed": 23,
+    "distanceMoved": 50.21951811795888,
+    "startX": 1169,
+    "startY": 436,
+    "currentX": 1128,
+    "currentY": 407
+  }
+}

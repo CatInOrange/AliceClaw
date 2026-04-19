@@ -1,0 +1,10 @@
+{
+  "timestamp": "20260419_190007",
+  "ts": 1776596406839,
+  "source": "frontend-fetch",
+  "kind": "events-stream-error",
+  "url": "http://43.156.5.177:8080/api/events/stream?since=17",
+  "method": "GET",
+  "since": 17,
+  "readyState": 2
+}

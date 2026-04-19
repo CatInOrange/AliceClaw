@@ -65,20 +65,6 @@ export class LAppView {
     const bottom: number = LAppDefine.ViewLogicalBottom + viewportShift;
     const top: number = LAppDefine.ViewLogicalTop + viewportShift;
 
-    console.log('[LAppView.initialize] canvas:', width, 'x', height, 'ratio:', ratio, 'viewportShift:', viewportShift, 'bottom:', bottom, 'top:', top);
-    // Send debug info to server
-    fetch('/api/debug/model', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        source: 'LAppView.initialize',
-        timestamp: Date.now(),
-        canvas: {width, height, ratio},
-        viewport: {left, right, bottom, top, viewportShift},
-        isPortrait: height > width
-      })
-    }).catch(()=>{});
-
     this._viewMatrix.setScreenRect(left, right, bottom, top); // デバイスに対応する画面の範囲。 Xの左端、Xの右端、Yの下端、Yの上端
     this._viewMatrix.scale(LAppDefine.ViewScale, LAppDefine.ViewScale);
 
@@ -236,30 +222,6 @@ export class LAppView {
     const deltaY = pointY - this._touchStartY;
     const dragX = Math.max(-1, Math.min(1, deltaX / (canvasWidth * 0.25)));
     const dragY = Math.max(-1, Math.min(1, -deltaY / (canvasHeight * 0.25)));
-
-    fetch('/api/debug/webgl', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        type: 'nativeTouchDrag',
-        source: 'LAppView.onTouchesMoved',
-        pointX,
-        pointY,
-        touchStartX: this._touchStartX,
-        touchStartY: this._touchStartY,
-        deltaX,
-        deltaY,
-        dragX,
-        dragY,
-        canvasWidth,
-        canvasHeight,
-        touchManagerX: this._touchManager.getX(),
-        touchManagerY: this._touchManager.getY(),
-        devicePixelRatio: window.devicePixelRatio,
-        _deviceToScreen_tr5: this._deviceToScreen?._tr?.[5] ?? 0,
-        _viewMatrix_tr5: this._viewMatrix?._tr?.[5] ?? 0,
-      })
-    }).catch(() => {});
 
     live2DManager.onDrag(dragX, dragY);
   }

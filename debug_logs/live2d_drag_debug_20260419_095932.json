@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260419_095932",
+  "data": {
+    "stage": "touch_move_dragging",
+    "ts": 1776563967089,
+    "pageUrl": "http://43.156.5.177:8080/",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    "pointX": 298.82144594192505,
+    "pointY": 176.21431398391724,
+    "touchStartX": 136.14285707473755,
+    "touchStartY": 235.21431398391724,
+    "deltaX": 162.6785888671875,
+    "deltaY": -59,
+    "dragX": 1,
+    "dragY": 0.59
+  }
+}

@@ -569,12 +569,6 @@ export class LAppModel extends CubismUserModel {
           if (this._textureCount >= textureCount) {
             // ロード完了
             this._state = LoadStep.CompleteSetup;
-            // 自动报告 WebGL 诊断信息到服务器
-            try {
-              reportWebGLDebug(gl, canvas).catch(e => console.error('WebGL debug report failed:', e));
-            } catch (e) {
-              console.error('Failed to report WebGL debug:', e);
-            }
           }
         };
 

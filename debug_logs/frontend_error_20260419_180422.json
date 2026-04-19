@@ -1,0 +1,8 @@
+{
+  "timestamp": "20260419_180422",
+  "ts": 1776593059726,
+  "source": "frontend-reconnect",
+  "backendUrl": "http://43.156.5.177:8080",
+  "errorName": "TypeError",
+  "errorMessage": "Failed to fetch"
+}

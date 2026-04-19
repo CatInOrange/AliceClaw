@@ -1,0 +1,10 @@
+{
+  "timestamp": "20260419_180514",
+  "ts": 1776593113730,
+  "source": "frontend-fetch",
+  "kind": "request-json-fetch-throw",
+  "url": "http://43.156.5.177:8080/api/sessions",
+  "method": "GET",
+  "errorName": "TypeError",
+  "errorMessage": "Failed to fetch"
+}

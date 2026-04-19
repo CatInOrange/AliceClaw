@@ -1,0 +1,11 @@
+{
+  "timestamp": "20260419_104518",
+  "data": {
+    "stage": "trigger_fired",
+    "ts": 1776566687503,
+    "pageUrl": "http://43.156.5.177:8080/",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    "text": "喂喂喂，这么短时间逗我四次，坏心思都写脸上啦，要不要我也反过来撩你一下？",
+    "cooldownMs": 15000
+  }
+}

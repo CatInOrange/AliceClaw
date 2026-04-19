@@ -184,23 +184,7 @@ function appendTeaseMessage(message: string) {
 }
 
 async function reportLive2DDragDebug(stage: string, extra: Record<string, unknown> = {}) {
-  try {
-    await fetch("/api/debug/live2d-drag", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        stage,
-        pageUrl: typeof window !== "undefined" ? window.location.href : "",
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-        ts: Date.now(),
-        ...extra,
-      }),
-    });
-  } catch {
-    // ignore debug-report failures
-  }
+  return; // debug removed
 }
 
 function resolveModelScale(rawScale: number | undefined, isPet: boolean): number | undefined {

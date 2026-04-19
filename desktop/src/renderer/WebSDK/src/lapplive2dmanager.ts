@@ -183,29 +183,6 @@ export class LAppLive2DManager {
         // Get isLeftButtonPressed() value for debugging
         const isLeftBtnPressed = Live2dBridge.isLeftButtonPressed();
 
-        const modelParams = {
-            ParamAngleX: model.getModel().getParameterValueById(model.idParamAngleX),
-            ParamAngleY: model.getModel().getParameterValueById(model.idParamAngleY),
-            ParamEyeBallX: model.getModel().getParameterValueById(model.idParamEyeBallX),
-            ParamEyeBallY: model.getModel().getParameterValueById(model.idParamEyeBallY),
-            ParamBodyAngleX: model.getModel().getParameterValueById(model.idParamBodyAngleX),
-            // Add other parameters if needed for debugging
-        };
-
-        fetch('/api/debug/model', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            source: 'LAppLive2DManager.onUpdate.isLeftButtonPressed_debug',
-            timestamp: Date.now(),
-            dragX: dragX,
-            dragY: dragY,
-            isLeftButtonPressed: isLeftBtnPressed, // Add this for debugging
-            modelMatrixY: modelMatrix[13],
-            modelParams: modelParams
-          })
-        }).catch(()=>{});
-
         // Update the green debug window with real drag values
         if (typeof dragX === 'number' && typeof dragY === 'number') {
           LAppDelegate.getInstance().showTouchDebug(`drag (${dragX.toFixed(2)}, ${dragY.toFixed(2)})`);

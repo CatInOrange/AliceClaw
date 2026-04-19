@@ -1,0 +1,14 @@
+{
+  "timestamp": "20260419_175528",
+  "ts": 1776592527672,
+  "source": "frontend-fetch",
+  "kind": "chat-stream-fetch-throw",
+  "url": "http://43.156.5.177:8080/api/chat/stream",
+  "method": "POST",
+  "sessionId": "sess_140c452ce994",
+  "modelId": "bian",
+  "providerId": "live2d-channel",
+  "messageSource": "chat",
+  "errorName": "TypeError",
+  "errorMessage": "Failed to fetch"
+}

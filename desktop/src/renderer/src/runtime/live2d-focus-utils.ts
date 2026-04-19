@@ -124,18 +124,6 @@ export function applyLive2DFocus({
       debugData['_viewMatrix_tr13'] = view._viewMatrix._tr[13]; // Y translation
     }
     // Try multiple backends - localhost:18080 (desktop) and :8080 (web version via nginx)
-    const urls = [
-      'http://localhost:18080/api/debug/webgl',
-      '/api/debug/webgl'  // fallback for nginx on 8080
-    ];
-    for (const url of urls) {
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'dragY', ...debugData })
-      }).catch(() => {});
-    }
-
     if (Number.isFinite(Number(dragX)) && Number.isFinite(Number(dragY))) {
       const finalDragY = pointerType === 'touch' ? -dragY : dragY;
       manager.onDrag(dragX, finalDragY);

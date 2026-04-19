@@ -1,0 +1,22 @@
+{
+  "timestamp": "20260419_092806",
+  "data": {
+    "type": "nativeTouchDrag",
+    "source": "LAppView.onTouchesMoved",
+    "pointX": 269.39285707473755,
+    "pointY": 265.7500042915344,
+    "touchStartX": 225.5357208251953,
+    "touchStartY": 298.2857666015625,
+    "deltaX": 43.857136249542236,
+    "deltaY": -32.535762310028076,
+    "dragX": 0.4690602807437672,
+    "dragY": 0.32535762310028077,
+    "canvasWidth": 374,
+    "canvasHeight": 400,
+    "touchManagerX": 942.8749997615814,
+    "touchManagerY": 930.1250150203705,
+    "devicePixelRatio": 3.5,
+    "_deviceToScreen_tr5": -0.0014285714132711291,
+    "_viewMatrix_tr5": 1
+  }
+}

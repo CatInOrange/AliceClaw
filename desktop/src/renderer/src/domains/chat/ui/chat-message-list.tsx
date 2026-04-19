@@ -245,13 +245,19 @@ export function MessageList({
         const automationKind = resolveAutomationNoteKind(message);
         const bubbleTone = isSystem
           ? getLunariaIntentStyles("neutral")
-          : isAssistant
-            ? {
-              bg: lunariaColors.cardStrong,
-              color: lunariaColors.text,
-              borderColor: lunariaColors.border,
-            }
-            : getLunariaIntentStyles("primary");
+            : isAssistant
+              ? {
+                // 女生 Live2D 气泡 - 温柔的粉紫色
+                bg: "#f8bbd0",
+                color: "#880e4f",
+                borderColor: "#ec407a",
+              }
+              : {
+                // 姐夫/男生气泡 - 清新的青蓝色
+                bg: "#b2ebf2",
+                color: "#006064",
+                borderColor: "#00bcd4",
+              };
 
         if (automationKind || isSystem) {
           const noteText = automationKind

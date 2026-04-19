@@ -35,6 +35,7 @@ def main() -> None:
         port=int(args.port),
         reload=bool(args.reload),
         log_level="info",
+        timeout_keep_alive=86400,  # 24小时，与nginx超时一致
     )
 
 

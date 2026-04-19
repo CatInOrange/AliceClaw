@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260419_121517",
+  "data": {
+    "stage": "pointer_down_event",
+    "ts": 1776572110769,
+    "pageUrl": "http://43.156.5.177:8080/",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    "pointerId": 8,
+    "pointerType": "touch",
+    "clientX": 131.78573608398438,
+    "clientY": 211.67857360839844,
+    "pageX": 131.78573608398438,
+    "pageY": 211.67857360839844
+  }
+}

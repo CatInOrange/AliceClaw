@@ -1,0 +1,14 @@
+{
+  "timestamp": "20260419_103735",
+  "data": {
+    "stage": "pointer_down_missed_model",
+    "pageUrl": "http://43.156.5.177:8080/",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+    "ts": 1776566255387,
+    "button": 0,
+    "clientX": 859,
+    "clientY": 380,
+    "hitAreaName": null,
+    "isHitOnModel": false
+  }
+}

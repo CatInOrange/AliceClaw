@@ -23,6 +23,7 @@ export let frameBuffer: WebGLFramebuffer | null = null;
 // Debug tracking for touch and drag display
 let _lastTouchStatus = '';
 let _lastDragPos: { x: number; y: number } | null = null;
+const TOUCH_DEBUG_VISIBLE = false;
 
 
 /**
@@ -104,10 +105,10 @@ export class LAppDelegate {
     gl!.enable(gl!.BLEND);
     gl!.blendFunc(gl!.SRC_ALPHA, gl!.ONE_MINUS_SRC_ALPHA);
 
-    // 创建触摸调试窗口，永久显示
-    console.log('[DEBUG] Creating touch debug window');
+    // 创建触摸调试窗口，默认隐藏，可在需要调试时重新开启
+    console.log('[DEBUG] Initializing touch debug window (hidden by default)');
     this.showTouchDebug('waiting...');
-    console.log('[DEBUG] Touch debug window created');
+    console.log('[DEBUG] Touch debug window initialized');
 
     const supportTouch: boolean = 'ontouchend' in canvas!;
 
@@ -228,9 +229,12 @@ export class LAppDelegate {
         z-index: 999999;
         border-radius: 5px;
         min-width: 150px;
+        display: ${TOUCH_DEBUG_VISIBLE ? 'block' : 'none'};
       `;
       document.body.appendChild(debugDiv);
     }
+
+    debugDiv.style.display = TOUCH_DEBUG_VISIBLE ? 'block' : 'none';
 
     // Display both touch status and drag position
     let displayText = _lastTouchStatus || 'no touch';

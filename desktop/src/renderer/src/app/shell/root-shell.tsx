@@ -283,6 +283,19 @@ function WindowShell() {
     [latestAssistantMessage?.id, latestAssistantMessage?.text],
   );
 
+  const formatBubbleTimestamp = (value: string | number | Date | null | undefined) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return formatChatMessageTimestamp(value as never);
+    }
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${month}/${day} ${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     const handleResize = () => {
       setViewportSize({
@@ -410,7 +423,7 @@ function WindowShell() {
                 key={`user-bubble-${latestUserMessage.id || latestUserMessage.text}`}
                 position="absolute"
                 left={isMobileWeb ? "4px" : "8px"}
-                bottom={isMobileWeb ? "82px" : "78px"}
+                bottom={isMobileWeb ? "88px" : "84px"}
                 w={isMobileWeb ? "102px" : "112px"}
                 minH={isMobileWeb ? "112px" : "132px"}
                 px="2.5"
@@ -432,7 +445,7 @@ function WindowShell() {
                   pointerEvents: "none",
                 }}
               >
-                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(92, 84, 78, 0.72)" mb="2" fontWeight="600">{formatChatMessageTimestamp(latestUserMessage.createdAt)}</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(92, 84, 78, 0.72)" mb="2" fontWeight="600">{formatBubbleTimestamp(latestUserMessage.createdAt)}</Text>
                 <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="11px" lineHeight="1.72" color="rgba(62, 57, 54, 0.88)">{latestUserMessage.text}</Text>
               </Box>
             ) : null}
@@ -442,7 +455,7 @@ function WindowShell() {
                 key={`assistant-bubble-${latestAssistantMessage.id || latestAssistantMessage.text}`}
                 position="absolute"
                 right={isMobileWeb ? "4px" : "8px"}
-                top={isElectron ? "46px" : "48px"}
+                top={isElectron ? "58px" : "60px"}
                 w={isMobileWeb ? "108px" : "118px"}
                 minH={isMobileWeb ? "126px" : "148px"}
                 px="2.5"
@@ -464,7 +477,7 @@ function WindowShell() {
                   pointerEvents: "none",
                 }}
               >
-                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(153, 104, 124, 0.72)" mb="2" fontWeight="700">{formatChatMessageTimestamp(latestAssistantMessage.createdAt)}</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(153, 104, 124, 0.72)" mb="2" fontWeight="700">{formatBubbleTimestamp(latestAssistantMessage.createdAt)}</Text>
                 <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="11px" lineHeight="1.72" color="rgba(95, 72, 82, 0.92)">{latestAssistantMessage.text}</Text>
               </Box>
             ) : null}

@@ -42,6 +42,49 @@ const FLIRT_TRIGGER_LINES = [
   "你今天很会嘛，一分钟内逗我四回，是想让我主动黏你一点嘛，嗯？",
 ];
 
+function appendTeaseMessage(message: string) {
+  const state = useAppStore.getState();
+  const sessionId = state.currentSessionId || state.sessions?.[0]?.id || null;
+
+  console.log('[appendTeaseMessage] Triggered with message:', message, {
+    currentSessionId: state.currentSessionId,
+    fallbackSessionId: state.sessions?.[0]?.id,
+    resolvedSessionId: sessionId,
+    sessionCount: state.sessions?.length || 0,
+  });
+
+  if (!sessionId) {
+    console.warn('[appendTeaseMessage] No session available, skipping chat append');
+    return null;
+  }
+
+  if (state.currentSessionId !== sessionId) {
+    state.setCurrentSessionId(sessionId);
+    console.log('[appendTeaseMessage] Synced currentSessionId before append:', sessionId);
+  }
+
+  const optimisticMessage = createOptimisticChatMessage({
+    sessionId,
+    role: 'assistant',
+    text: message,
+    source: 'chat',
+  });
+
+  state.appendMessageForSession(sessionId, optimisticMessage);
+
+  requestAnimationFrame(() => {
+    const verifyState = useAppStore.getState();
+    console.log('[appendTeaseMessage] Post-append verification:', {
+      currentSessionId: verifyState.currentSessionId,
+      targetSessionId: sessionId,
+      targetMessageCount: verifyState.messagesBySession?.[sessionId]?.length || 0,
+      appendedMessageId: optimisticMessage.id,
+    });
+  });
+
+  return { sessionId, optimisticMessageId: optimisticMessage.id };
+}
+
 async function reportLive2DDragDebug(stage: string, extra: Record<string, unknown> = {}) {
   try {
     await fetch("/api/debug/live2d-drag", {
@@ -479,12 +522,7 @@ export const useLive2DModel = ({
         text,
         cooldownMs: FLIRT_TRIGGER_COOLDOWN_MS,
       });
-      state.appendMessageForSession(sessionId, createOptimisticChatMessage({
-        sessionId,
-        role: "assistant",
-        text,
-        source: "chat",
-      }));
+      appendTeaseMessage(text);
     };
     const adapter = (window as any).getLAppAdapter?.();
     const model = adapter?.getModel();
@@ -686,44 +724,7 @@ Live2DDebug.playRandomMotion("")  // Play random motion from default group
 
     // Expose function for Live2D delegate to trigger tease messages in the normal chat flow
     (window as any).triggerLive2DTeaseMessage = (message: string) => {
-      const state = useAppStore.getState();
-      const sessionId = state.currentSessionId || state.sessions?.[0]?.id || null;
-
-      console.log('[triggerLive2DTeaseMessage] Triggered with message:', message, {
-        currentSessionId: state.currentSessionId,
-        fallbackSessionId: state.sessions?.[0]?.id,
-        resolvedSessionId: sessionId,
-        sessionCount: state.sessions?.length || 0,
-      });
-
-      if (!sessionId) {
-        console.warn('[triggerLive2DTeaseMessage] No session available, skipping chat append');
-        return;
-      }
-
-      if (state.currentSessionId !== sessionId) {
-        state.setCurrentSessionId(sessionId);
-        console.log('[triggerLive2DTeaseMessage] Synced currentSessionId before append:', sessionId);
-      }
-
-      const optimisticMessage = createOptimisticChatMessage({
-        sessionId,
-        role: 'assistant',
-        text: message,
-        source: 'chat',
-      });
-
-      state.appendMessageForSession(sessionId, optimisticMessage);
-
-      requestAnimationFrame(() => {
-        const verifyState = useAppStore.getState();
-        console.log('[triggerLive2DTeaseMessage] Post-append verification:', {
-          currentSessionId: verifyState.currentSessionId,
-          targetSessionId: sessionId,
-          targetMessageCount: verifyState.messagesBySession?.[sessionId]?.length || 0,
-          appendedMessageId: optimisticMessage.id,
-        });
-      });
+      appendTeaseMessage(message);
     };
 
     // Cleanup function

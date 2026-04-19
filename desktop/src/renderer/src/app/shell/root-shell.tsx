@@ -7,7 +7,7 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FiLayers,
@@ -224,6 +224,8 @@ function WindowShell() {
   });
   const windowFileInputRef = useRef<HTMLInputElement>(null);
   const manifest = useAppStore((state) => state.manifest);
+  const currentSessionId = useAppStore((state) => state.currentSessionId);
+  const messages = useAppStore(selectCurrentSessionMessages);
   const stageActionPanelOpen = useAppStore((state) => state.stageActionPanelOpen);
   const setStageActionPanelOpen = useAppStore((state) => state.setStageActionPanelOpen);
   const subtitle = useAppStore((state) => state.subtitle);
@@ -238,6 +240,15 @@ function WindowShell() {
     configName: confName,
     manifestName: manifest?.model.name,
   });
+
+  const latestUserMessage = useMemo(
+    () => [...messages].reverse().find((message) => message.role === "user" && message.text?.trim()),
+    [messages],
+  );
+  const latestAssistantMessage = useMemo(
+    () => [...messages].reverse().find((message) => message.role === "assistant" && message.text?.trim()),
+    [messages],
+  );
 
   useEffect(() => {
     const handleResize = () => {
@@ -335,178 +346,174 @@ function WindowShell() {
           </Box>
         </Box>
 
+        {!settingsOpen ? (
+          <>
+            {latestUserMessage?.text ? (
+              <Box
+                position="absolute"
+                left={isMobileWeb ? "10px" : "18px"}
+                bottom={isMobileWeb ? "108px" : "96px"}
+                maxW={isMobileWeb ? "46vw" : "280px"}
+                px="4"
+                py="3"
+                borderRadius="22px"
+                bg="rgba(255, 245, 240, 0.92)"
+                border="1px solid"
+                borderColor="rgba(220, 141, 121, 0.28)"
+                boxShadow="0 14px 36px rgba(121, 93, 77, 0.14)"
+                backdropFilter="blur(12px)"
+                zIndex="18"
+              >
+                <Text fontSize="11px" color={lunariaColors.textSubtle} mb="1" fontWeight="700">你刚刚说</Text>
+                <Text noOfLines={3} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestUserMessage.text}</Text>
+              </Box>
+            ) : null}
+
+            {latestAssistantMessage?.text ? (
+              <Box
+                position="absolute"
+                right={isMobileWeb ? "10px" : "18px"}
+                bottom={isMobileWeb ? "164px" : "152px"}
+                maxW={isMobileWeb ? "50vw" : "300px"}
+                px="4"
+                py="3"
+                borderRadius="22px"
+                bg="rgba(248, 241, 236, 0.9)"
+                border="1px solid"
+                borderColor="rgba(176, 144, 122, 0.24)"
+                boxShadow="0 14px 36px rgba(121, 93, 77, 0.14)"
+                backdropFilter="blur(12px)"
+                zIndex="18"
+              >
+                <Text fontSize="11px" color={lunariaColors.textSubtle} mb="1" fontWeight="700">{assistantDisplayName || "她"}刚刚回你</Text>
+                <Text noOfLines={4} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestAssistantMessage.text}</Text>
+              </Box>
+            ) : null}
+          </>
+        ) : null}
+
         <Box
-          w={isMobileWeb ? "calc(100% - 20px)" : "280px"}
-          minW={isMobileWeb ? "0" : "280px"}
-          h={isMobileWeb ? "38dvh" : "calc(100% - 24px)"}
-          minH={isMobileWeb ? "240px" : "420px"}
-          maxH={isMobileWeb ? "42dvh" : "calc(100% - 24px)"}
-          px={isMobileWeb ? "3" : "3"}
-          pt={isElectron ? "38px" : isMobileWeb ? "2" : "3"}
-          pb={isMobileWeb ? "calc(env(safe-area-inset-bottom, 0px) + 10px)" : "3"}
-          bg="linear-gradient(180deg, rgba(251,247,243,0.82) 0%, rgba(244,236,228,0.88) 100%)"
-          border="1px solid"
-          borderColor="rgba(176, 144, 122, 0.28)"
           position="absolute"
-          top={isMobileWeb ? "auto" : (isElectron ? "42px" : "12px")}
-          right={isMobileWeb ? "10px" : "12px"}
-          bottom={isMobileWeb ? "10px" : "12px"}
+          left={isMobileWeb ? "10px" : "16px"}
+          right={isMobileWeb ? "10px" : "16px"}
+          bottom={isMobileWeb ? "10px" : "16px"}
           zIndex="20"
-          borderRadius={isMobileWeb ? "20px" : "20px"}
-          boxShadow="0 18px 56px rgba(88, 60, 46, 0.18)"
-          backdropFilter="blur(20px)"
-          overflow="hidden"
         >
-          <Flex h="100%" direction="column" gap="0">
-            <HStack justify="flex-end" align="center" pb={isMobileWeb ? "2" : (isPortraitLayout ? "3" : "4") }>
-              <HStack gap="2">
-                <IconButton aria-label={t("shell.newSession")} onClick={() => void createNewSession()} {...lunariaIconButtonStyles}><FiPlus /></IconButton>
-                <IconButton aria-label={t("common.reconnect")} onClick={() => void reconnect()} {...lunariaIconButtonStyles}><FiRefreshCcw /></IconButton>
-                <IconButton
-                  aria-label={t("shell.toggleSettings")}
-                  onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "settings"))}
-                  {...lunariaIconButtonStyles}
-                  bg={settingsOpen ? lunariaColors.primarySoft : lunariaIconButtonStyles.bg}
-                  color={settingsOpen ? lunariaColors.primaryStrong : lunariaColors.text}
-                >
-                  <FiSettings />
-                </IconButton>
-                {isElectron ? (
-                  <IconButton aria-label={t("shell.petMode")} onClick={() => setMode("pet")} {...lunariaIconButtonStyles}><FiLayers /></IconButton>
-                ) : null}
-              </HStack>
+          <Flex
+            direction="column"
+            gap="2"
+            px={isMobileWeb ? "3" : "4"}
+            py={isMobileWeb ? "3" : "4"}
+            borderRadius={isMobileWeb ? "22px" : "24px"}
+            bg="linear-gradient(180deg, rgba(251,247,243,0.78) 0%, rgba(244,236,228,0.86) 100%)"
+            border="1px solid"
+            borderColor="rgba(176, 144, 122, 0.24)"
+            boxShadow="0 18px 48px rgba(88, 60, 46, 0.16)"
+            backdropFilter="blur(20px)"
+          >
+            <HStack justify="flex-end" align="center" spacing="2">
+              <IconButton aria-label={t("shell.newSession")} onClick={() => void createNewSession()} {...lunariaIconButtonStyles}><FiPlus /></IconButton>
+              <IconButton aria-label={t("common.reconnect")} onClick={() => void reconnect()} {...lunariaIconButtonStyles}><FiRefreshCcw /></IconButton>
+              <IconButton
+                aria-label={t("shell.toggleSettings")}
+                onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "settings"))}
+                {...lunariaIconButtonStyles}
+                bg={settingsOpen ? lunariaColors.primarySoft : lunariaIconButtonStyles.bg}
+                color={settingsOpen ? lunariaColors.primaryStrong : lunariaColors.text}
+              >
+                <FiSettings />
+              </IconButton>
+              {isElectron ? (
+                <IconButton aria-label={t("shell.petMode")} onClick={() => setMode("pet")} {...lunariaIconButtonStyles}><FiLayers /></IconButton>
+              ) : null}
             </HStack>
 
-            <Box flex="1" minH="0" overflow="hidden">
-              {settingsOpen ? (
-                <SettingsPanel />
-              ) : (
-                <Box
-                  h="100%"
-                  pt={sessionsOpen ? "1" : "2"}
-                  pb={isPortraitLayout ? "2" : "4"}
-                  display="flex"
-                  flexDirection="column"
-                  borderTop="1px solid"
-                  borderColor={lunariaColors.border}
-                >
-                  <HStack justify="flex-start" mb="3" pt={isPortraitLayout ? "3" : "4"}>
-                    <Box>
-                      <Text {...lunariaEyebrowStyles}>{t("shell.conversation")}</Text>
-                    </Box>
-                  </HStack>
-                  <CurrentSessionMessageList
-                    hideScrollbar
-                    assistantName=""
-                    emptyState={{
-                      title: t("shell.emptyConversationTitle"),
-                      hint: t("shell.emptyConversationHint"),
-                    }}
-                    variant="window"
-                  />
-                </Box>
-              )}
-            </Box>
-
-            {!settingsOpen ? (
-              <Stack gap="2" pt="2">
-                {subtitle ? (
-                  <Box
-                    px={isMobileWeb ? "3.5" : "4"}
-                    py={isMobileWeb ? "3" : "3.5"}
-                    {...lunariaPanelStyles}
-                  >
-                    <Text
-                      textAlign="left"
-                      color={lunariaColors.text}
-                      fontWeight="500"
-                      lineHeight="1.8"
-                      fontSize={isMobileWeb ? "sm" : "md"}
-                    >
-                      {subtitle}
-                    </Text>
-                  </Box>
-                ) : null}
-                <input
-                  ref={windowFileInputRef}
-                  type="file"
-                  hidden
-                  multiple
-                  accept="image/*,audio/*,video/*,*/*"
-                  onChange={handleWindowUpload}
-                />
-
-                {windowPlusOpen ? (
-                  <Flex
-                    wrap="wrap"
-                    gap="3"
-                    p="3"
-                    justify="center"
-                    {...lunariaMutedCardStyles}
-                  >
-                    <IconButton
-                      aria-label={t("shell.newSession")}
-                      size="md"
-                      {...lunariaIconButtonStyles}
-                      onClick={() => {
-                        void createNewSession();
-                        setWindowPlusOpen(false);
-                      }}
-                    >
-                      <LuMessageSquarePlus />
-                    </IconButton>
-                    <IconButton
-                      aria-label={t("shell.upload")}
-                      size="md"
-                      {...lunariaIconButtonStyles}
-                      onClick={() => windowFileInputRef.current?.click()}
-                    >
-                      <LuUpload />
-                    </IconButton>
-                    <IconButton
-                      aria-label={t("shell.camera")}
-                      size="md"
-                      {...lunariaIconButtonStyles}
-                      onClick={() => void handleWindowCamera()}
-                    >
-                      <LuCamera />
-                    </IconButton>
-                    <IconButton
-                      aria-label={t("shell.screenshot")}
-                      size="md"
-                      {...lunariaIconButtonStyles}
-                      onClick={() => void handleWindowScreenshot()}
-                    >
-                      <LuImage />
-                    </IconButton>
-                    <IconButton
-                      aria-label={t("shell.actions")}
-                      size="md"
-                      {...lunariaIconButtonStyles}
-                      onClick={() => {
-                        setStageActionPanelOpen(!stageActionPanelOpen);
-                        setWindowPlusOpen(false);
-                      }}
-                    >
-                      <LuSmile />
-                    </IconButton>
-                  </Flex>
-                ) : null}
-
-                {stageActionPanelOpen ? <ActionPanel /> : null}
-
-                <BottomComposer
-                  compact={isMobileWeb || isPortraitLayout}
-                  showPlusButton={isMobileWeb}
-                  showWindowTools={!isMobileWeb}
-                  onPlusClick={() => {
-                    setStageActionPanelOpen(false);
-                    setWindowPlusOpen((current) => !current);
-                  }}
-                  onScreenshotClick={() => void handleWindowScreenshot()}
-                />
-              </Stack>
+            {subtitle && !settingsOpen ? (
+              <Box px="3.5" py="2.5" {...lunariaPanelStyles}>
+                <Text textAlign="left" color={lunariaColors.text} fontWeight="500" lineHeight="1.7" fontSize={isMobileWeb ? "sm" : "md"}>
+                  {subtitle}
+                </Text>
+              </Box>
             ) : null}
+
+            <input
+              ref={windowFileInputRef}
+              type="file"
+              hidden
+              multiple
+              accept="image/*,audio/*,video/*,*/*"
+              onChange={handleWindowUpload}
+            />
+
+            {!settingsOpen && windowPlusOpen ? (
+              <Flex wrap="wrap" gap="3" p="3" justify="center" {...lunariaMutedCardStyles}>
+                <IconButton
+                  aria-label={t("shell.newSession")}
+                  size="md"
+                  {...lunariaIconButtonStyles}
+                  onClick={() => {
+                    void createNewSession();
+                    setWindowPlusOpen(false);
+                  }}
+                >
+                  <LuMessageSquarePlus />
+                </IconButton>
+                <IconButton
+                  aria-label={t("shell.upload")}
+                  size="md"
+                  {...lunariaIconButtonStyles}
+                  onClick={() => windowFileInputRef.current?.click()}
+                >
+                  <LuUpload />
+                </IconButton>
+                <IconButton
+                  aria-label={t("shell.camera")}
+                  size="md"
+                  {...lunariaIconButtonStyles}
+                  onClick={() => void handleWindowCamera()}
+                >
+                  <LuCamera />
+                </IconButton>
+                <IconButton
+                  aria-label={t("shell.screenshot")}
+                  size="md"
+                  {...lunariaIconButtonStyles}
+                  onClick={() => void handleWindowScreenshot()}
+                >
+                  <LuImage />
+                </IconButton>
+                <IconButton
+                  aria-label={t("shell.actions")}
+                  size="md"
+                  {...lunariaIconButtonStyles}
+                  onClick={() => {
+                    setStageActionPanelOpen(!stageActionPanelOpen);
+                    setWindowPlusOpen(false);
+                  }}
+                >
+                  <LuSmile />
+                </IconButton>
+              </Flex>
+            ) : null}
+
+            {!settingsOpen && stageActionPanelOpen ? <ActionPanel /> : null}
+
+            {settingsOpen ? (
+              <Box maxH={isMobileWeb ? "42dvh" : "50dvh"} overflow="auto" borderRadius="18px" bg="rgba(255,255,255,0.45)">
+                <SettingsPanel />
+              </Box>
+            ) : (
+              <BottomComposer
+                compact={isMobileWeb || isPortraitLayout}
+                showPlusButton={isMobileWeb}
+                showWindowTools={!isMobileWeb}
+                onPlusClick={() => {
+                  setStageActionPanelOpen(false);
+                  setWindowPlusOpen((current) => !current);
+                }}
+                onScreenshotClick={() => void handleWindowScreenshot()}
+              />
+            )}
           </Flex>
         </Box>
       </Flex>

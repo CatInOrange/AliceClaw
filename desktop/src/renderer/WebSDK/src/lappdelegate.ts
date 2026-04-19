@@ -34,6 +34,11 @@ let _lastDragPos: { x: number; y: number } | null = null;
  * 
  */
 export class LAppDelegate {
+  // Multi-drag tease detection instance variables
+  private _dragTimestamps: number[] = [];
+  private _lastTeaseTime: number = 0;
+  private _teaseMessageShown: boolean = false;
+
   /**
    * クラスのインスタンス（シングルトン）を返す。
    * インスタンスが生成されていない場合は内部でインスタンスを生成する。
@@ -449,6 +454,80 @@ export class LAppDelegate {
   _mouseY: number; // マウスY座標 // 鼠标Y坐标
   _isEnd: boolean; // APP終了しているか // APP是否已结束
   _textureManager: LAppTextureManager | null; // テクスチャマネージャー // 纹理管理器
+
+  /**
+   * 检查是否满足多次拖拽触发条件
+   * 如果满足4次拖拽在60秒内，则触发撩消息
+   */
+  public checkMultiDragTease(): void {
+    const now = Date.now();
+    const windowMs = 60 * 1000;  // 60秒内
+    const cooldownMs = 30 * 1000;  // 30秒冷却
+    const threshold = 4;  // 4次拖拽触发
+
+    console.log("[DEBUG] checkMultiDragTease called, _teaseMessageShown=" + this._teaseMessageShown + ", _lastTeaseTime=" + this._lastTeaseTime);
+
+    // 检查冷却中
+    if (this._teaseMessageShown && now - this._lastTeaseTime < cooldownMs) {
+      console.log("[DEBUG] checkMultiDragTease: in cooldown, returning");
+      return;
+    }
+
+    // 冷却过期，重置标志
+    if (this._teaseMessageShown && now - this._lastTeaseTime >= cooldownMs) {
+      console.log("[DEBUG] checkMultiDragTease: cooldown expired, resetting flag");
+      this._teaseMessageShown = false;
+    }
+
+    this._dragTimestamps.push(now);
+    console.log("[DEBUG] checkMultiDragTease: pushed timestamp, _dragTimestamps.length=" + this._dragTimestamps.length);
+
+    // 过滤出60秒内的时间戳
+    this._dragTimestamps = this._dragTimestamps.filter((t: number) => now - t <= windowMs);
+    console.log("[DEBUG] checkMultiDragTease: after filter, _dragTimestamps.length=" + this._dragTimestamps.length);
+
+    if (this._dragTimestamps.length < threshold) {
+      return;
+    }
+
+    // 检查时间窗口
+    const first = this._dragTimestamps[0];
+    const last = this._dragTimestamps[this._dragTimestamps.length - 1];
+    console.log("[DEBUG] checkMultiDragTease: threshold reached! count=" + this._dragTimestamps.length + ", first=" + first + ", last=" + last + ", diff=" + (last - first));
+
+    if (last - first <= windowMs) {
+      console.log("[DEBUG] checkMultiDragTease: time window OK, calling triggerTease!");
+      this.triggerTease();
+      this._dragTimestamps = [];
+    } else {
+      console.log("[DEBUG] checkMultiDragTease: time window too large, not triggering");
+    }
+  }
+
+  /**
+   * 触发撩消息
+   */
+  public triggerTease(): void {
+    const now = Date.now();
+    this._lastTeaseTime = now;
+    this._teaseMessageShown = true;
+
+    const messages = [
+      "姐姐你摸够了没呀~再摸我要生气啦！😤",
+      "呜~姐姐不要一直摸我嘛，会害羞的嘞~🎀",
+      "嘿嘿，姐姐这么喜欢我呀？不过也要休息一下嘞~",
+      "再摸我就要逃跑了哦~ 哼！😝",
+      "姐姐的手好温暖...但是！不许再摸了！💢",
+    ];
+
+    const message = messages[Math.floor(Math.random() * messages.length)];
+    this.showTouchDebug("[TEASE] " + message);
+
+    // 调用全局的 triggerLive2DTeaseMessage 函数（如果存在）
+    if (typeof (window as any).triggerLive2DTeaseMessage === 'function') {
+      (window as any).triggerLive2DTeaseMessage(message);
+    }
+  }
 }
 
 /**
@@ -464,6 +543,9 @@ function onClickBegan(e: MouseEvent): void {
 
   const posX: number = e.pageX;
   const posY: number = e.pageY;
+
+  // 检查是否触发撩消息
+  LAppDelegate.getInstance().checkMultiDragTease();
 
   LAppDelegate.getInstance()._view!.onTouchesBegan(posX, posY);
 }
@@ -513,6 +595,10 @@ function onTouchBegan(e: TouchEvent): void {
 
   const posX = e.changedTouches[0].pageX;
   const posY = e.changedTouches[0].pageY;
+
+  // 检查是否触发撩消息
+  LAppDelegate.getInstance().checkMultiDragTease();
+
   LAppDelegate.getInstance().showTouchDebug(`[START] (${posX.toFixed(0)}, ${posY.toFixed(0)})`);
 
   LAppDelegate.getInstance()._view!.onTouchesBegan(posX, posY);

@@ -512,14 +512,6 @@ function WindowShell() {
           zIndex="20"
         >
           <Flex direction="column" gap="2">
-            {subtitle && !settingsOpen ? (
-              <Box px="3.5" py="2.5" {...lunariaPanelStyles}>
-                <Text textAlign="left" color={lunariaColors.text} fontWeight="500" lineHeight="1.7" fontSize={isMobileWeb ? "sm" : "md"}>
-                  {subtitle}
-                </Text>
-              </Box>
-            ) : null}
-
             <input
               ref={windowFileInputRef}
               type="file"

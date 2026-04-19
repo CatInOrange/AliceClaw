@@ -722,9 +722,10 @@ Live2DDebug.playRandomMotion("")  // Play random motion from default group
     console.log('Live2D Debug functions exposed to window.Live2DDebug');
     console.log('Type Live2DDebug.help() for usage information');
 
-    // Expose function for Live2D delegate to trigger tease messages in the normal chat flow
-    (window as any).triggerLive2DTeaseMessage = (message: string) => {
-      appendTeaseMessage(message);
+    // Temporarily disable direct tease injection path for testing
+    (window as any).triggerLive2DTeaseMessage = (_message: string) => {
+      console.log('[triggerLive2DTeaseMessage] Disabled for testing, returning false');
+      return false;
     };
 
     // Cleanup function

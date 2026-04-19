@@ -319,7 +319,6 @@ function WindowShell() {
         <Box
           flex="1"
           minH="0"
-          h="100%"
           position="relative"
           overflow="hidden"
         >
@@ -335,8 +334,7 @@ function WindowShell() {
               inset="0"
               display="flex"
               alignItems="stretch"
-              justifyContent={isMobileWeb ? "center" : "flex-start"}
-              pr={isMobileWeb ? "0" : "300px"}
+              justifyContent="center"
             >
               <Box flex="1" minW="0" h="100%">
                 <Live2D />
@@ -346,13 +344,37 @@ function WindowShell() {
           </Box>
         </Box>
 
+        <Box
+          position="absolute"
+          top={isPortraitLayout ? "14px" : "18px"}
+          right={isPortraitLayout ? "14px" : "18px"}
+          zIndex="24"
+        >
+          <HStack justify="flex-end" align="center" spacing="2">
+            <IconButton aria-label={t("shell.newSession")} onClick={() => void createNewSession()} {...lunariaIconButtonStyles}><FiPlus /></IconButton>
+            <IconButton aria-label={t("common.reconnect")} onClick={() => void reconnect()} {...lunariaIconButtonStyles}><FiRefreshCcw /></IconButton>
+            <IconButton
+              aria-label={t("shell.toggleSettings")}
+              onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "settings"))}
+              {...lunariaIconButtonStyles}
+              bg={settingsOpen ? lunariaColors.primarySoft : lunariaIconButtonStyles.bg}
+              color={settingsOpen ? lunariaColors.primaryStrong : lunariaColors.text}
+            >
+              <FiSettings />
+            </IconButton>
+            {isElectron ? (
+              <IconButton aria-label={t("shell.petMode")} onClick={() => setMode("pet")} {...lunariaIconButtonStyles}><FiLayers /></IconButton>
+            ) : null}
+          </HStack>
+        </Box>
+
         {!settingsOpen ? (
           <>
             {latestUserMessage?.text ? (
               <Box
                 position="absolute"
                 left={isMobileWeb ? "10px" : "18px"}
-                bottom={isMobileWeb ? "108px" : "96px"}
+                bottom={isMobileWeb ? "86px" : "82px"}
                 maxW={isMobileWeb ? "46vw" : "280px"}
                 px="4"
                 py="3"
@@ -365,7 +387,7 @@ function WindowShell() {
                 zIndex="18"
               >
                 <Text fontSize="11px" color={lunariaColors.textSubtle} mb="1" fontWeight="700">你刚刚说</Text>
-                <Text noOfLines={3} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestUserMessage.text}</Text>
+                <Text noOfLines={2} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestUserMessage.text}</Text>
               </Box>
             ) : null}
 
@@ -373,7 +395,7 @@ function WindowShell() {
               <Box
                 position="absolute"
                 right={isMobileWeb ? "10px" : "18px"}
-                bottom={isMobileWeb ? "164px" : "152px"}
+                bottom={isMobileWeb ? "126px" : "122px"}
                 maxW={isMobileWeb ? "50vw" : "300px"}
                 px="4"
                 py="3"
@@ -386,48 +408,22 @@ function WindowShell() {
                 zIndex="18"
               >
                 <Text fontSize="11px" color={lunariaColors.textSubtle} mb="1" fontWeight="700">{assistantDisplayName || "她"}刚刚回你</Text>
-                <Text noOfLines={4} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestAssistantMessage.text}</Text>
+                <Text noOfLines={2} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestAssistantMessage.text}</Text>
               </Box>
             ) : null}
           </>
         ) : null}
 
         <Box
-          position="absolute"
-          left={isMobileWeb ? "10px" : "16px"}
-          right={isMobileWeb ? "10px" : "16px"}
-          bottom={isMobileWeb ? "10px" : "16px"}
+          borderTop="1px solid"
+          borderColor="rgba(176, 144, 122, 0.18)"
+          bg="linear-gradient(180deg, rgba(251,247,243,0.72) 0%, rgba(244,236,228,0.82) 100%)"
+          backdropFilter="blur(18px)"
+          px={isMobileWeb ? "10px" : "16px"}
+          py={isMobileWeb ? "8px" : "10px"}
           zIndex="20"
         >
-          <Flex
-            direction="column"
-            gap="2"
-            px={isMobileWeb ? "3" : "4"}
-            py={isMobileWeb ? "3" : "4"}
-            borderRadius={isMobileWeb ? "22px" : "24px"}
-            bg="linear-gradient(180deg, rgba(251,247,243,0.78) 0%, rgba(244,236,228,0.86) 100%)"
-            border="1px solid"
-            borderColor="rgba(176, 144, 122, 0.24)"
-            boxShadow="0 18px 48px rgba(88, 60, 46, 0.16)"
-            backdropFilter="blur(20px)"
-          >
-            <HStack justify="flex-end" align="center" spacing="2">
-              <IconButton aria-label={t("shell.newSession")} onClick={() => void createNewSession()} {...lunariaIconButtonStyles}><FiPlus /></IconButton>
-              <IconButton aria-label={t("common.reconnect")} onClick={() => void reconnect()} {...lunariaIconButtonStyles}><FiRefreshCcw /></IconButton>
-              <IconButton
-                aria-label={t("shell.toggleSettings")}
-                onClick={() => setSidebarPanel((current) => getNextWindowSidebarPanel(current, "settings"))}
-                {...lunariaIconButtonStyles}
-                bg={settingsOpen ? lunariaColors.primarySoft : lunariaIconButtonStyles.bg}
-                color={settingsOpen ? lunariaColors.primaryStrong : lunariaColors.text}
-              >
-                <FiSettings />
-              </IconButton>
-              {isElectron ? (
-                <IconButton aria-label={t("shell.petMode")} onClick={() => setMode("pet")} {...lunariaIconButtonStyles}><FiLayers /></IconButton>
-              ) : null}
-            </HStack>
-
+          <Flex direction="column" gap="2">
             {subtitle && !settingsOpen ? (
               <Box px="3.5" py="2.5" {...lunariaPanelStyles}>
                 <Text textAlign="left" color={lunariaColors.text} fontWeight="500" lineHeight="1.7" fontSize={isMobileWeb ? "sm" : "md"}>
@@ -504,9 +500,9 @@ function WindowShell() {
               </Box>
             ) : (
               <BottomComposer
-                compact={isMobileWeb || isPortraitLayout}
-                showPlusButton={isMobileWeb}
-                showWindowTools={!isMobileWeb}
+                compact
+                showPlusButton={false}
+                showWindowTools={false}
                 onPlusClick={() => {
                   setStageActionPanelOpen(false);
                   setWindowPlusOpen((current) => !current);

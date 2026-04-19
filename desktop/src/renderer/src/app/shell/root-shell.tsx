@@ -463,7 +463,7 @@ function WindowShell() {
                   pointerEvents: "none",
                 }}
               >
-                <Text fontSize="10px" letterSpacing="0.08em" color="rgba(92, 84, 78, 0.72)" mb="2" fontWeight="600">{formatBubbleTimestamp(latestUserMessage.createdAt)}</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(92, 84, 78, 0.72)" mb="2" fontWeight="600">{formatBubbleTimestamp(latestUserMessage.createdAt)}</Text>
                 <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="13px" lineHeight="1.72" color="rgba(62, 57, 54, 0.88)">{latestUserMessage.text}</Text>
               </Box>
             ) : null}
@@ -495,7 +495,7 @@ function WindowShell() {
                   pointerEvents: "none",
                 }}
               >
-                <Text fontSize="10px" letterSpacing="0.08em" color="rgba(153, 104, 124, 0.72)" mb="2" fontWeight="700">{formatBubbleTimestamp(latestAssistantMessage.createdAt)}</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(153, 104, 124, 0.72)" mb="2" fontWeight="700">{formatBubbleTimestamp(latestAssistantMessage.createdAt)}</Text>
                 <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="13px" lineHeight="1.72" color="rgba(95, 72, 82, 0.92)">{latestAssistantMessage.text}</Text>
               </Box>
             ) : null}

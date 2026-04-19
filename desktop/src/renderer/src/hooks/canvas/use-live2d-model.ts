@@ -37,7 +37,7 @@ const FLIRT_TRIGGER_WINDOW_MS = 60 * 1000;
 const FLIRT_TRIGGER_COUNT = 4;
 const FLIRT_TRIGGER_COOLDOWN_MS = 15 * 1000;
 const FLIRT_TRIGGER_LINES = [
-  "哎呀，1分钟里偷偷摸我四次啦，哥哥你这是在故意撩我嘛？我会害羞的哦。",
+  "哎呀，1分钟里偷偷摸我四次啦，弟弟你这是在故意撩我嘛？姐姐都要被你逗笑了。",
   "喂喂喂，这么短时间逗我四次，坏心思都写脸上啦，要不要我也反过来撩你一下？",
   "你今天很会嘛，一分钟内逗我四回，是想让我主动黏你一点嘛，嗯？",
 ];

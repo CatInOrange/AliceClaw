@@ -81,4 +81,18 @@ def create_debug_router() -> APIRouter:
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
 
+    @router.post("/frontend-error")
+    async def report_frontend_error(data: dict[str, Any]):
+        """Receive frontend fetch/connection error reports from the browser"""
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = DEBUG_LOG_DIR / f"frontend_error_{timestamp}.json"
+
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump({
+                "timestamp": timestamp,
+                **data,
+            }, f, ensure_ascii=False, indent=2)
+
+        return {"status": "ok", "filename": str(filename)}
+
     return router

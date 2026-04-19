@@ -23,7 +23,7 @@ import {
   LuSmile,
   LuUpload,
 } from "react-icons/lu";
-import { useAppStore, getQuickActionLabel } from "@/domains/renderer-store";
+import { useAppStore, getQuickActionLabel, selectCurrentSessionMessages } from "@/domains/renderer-store";
 import { CurrentSessionMessageList } from "@/domains/chat/ui/chat-message-list";
 import { getPetShellBackgroundStyle } from "@/runtime/pet-overlay-utils.ts";
 import {

@@ -285,15 +285,30 @@ function WindowShell() {
 
   const formatBubbleTimestamp = (value: string | number | Date | null | undefined) => {
     if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
+
+    let date: Date | null = null;
+
+    if (value instanceof Date) {
+      date = value;
+    } else if (typeof value === "number") {
+      date = new Date(value < 1e12 ? value * 1000 : value);
+    } else if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (/^\d+$/.test(trimmed)) {
+        const numeric = Number(trimmed);
+        date = new Date(numeric < 1e12 ? numeric * 1000 : numeric);
+      } else {
+        date = new Date(trimmed);
+      }
+    }
+
+    if (!date || Number.isNaN(date.getTime())) {
       return formatChatMessageTimestamp(value as never);
     }
+
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${month}/${day} ${hours}:${minutes}`;
+    return `${month}-${day}`;
   };
 
   useEffect(() => {

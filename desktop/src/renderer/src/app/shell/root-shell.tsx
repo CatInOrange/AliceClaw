@@ -7,7 +7,7 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FiLayers,
@@ -78,6 +78,30 @@ function resolveConnectionIntent(connectionState: string): "success" | "info" | 
 }
 
 const lunariaScrollbarStyles = getLunariaScrollbarStyles();
+
+const vnFloatInKeyframes = `
+  @keyframes vnBubbleFloatInLeft {
+    from {
+      opacity: 0;
+      transform: translate3d(-8px, 10px, 0) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes vnBubbleFloatInRight {
+    from {
+      opacity: 0;
+      transform: translate3d(8px, -10px, 0) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+`;
 
 function ActionPanel({
   pet = false,
@@ -250,6 +274,15 @@ function WindowShell() {
     [messages],
   );
 
+  const userBubbleAnimation = useMemo<CSSProperties>(
+    () => ({ animation: "vnBubbleFloatInLeft 260ms ease-out" }),
+    [latestUserMessage?.id, latestUserMessage?.text],
+  );
+  const assistantBubbleAnimation = useMemo<CSSProperties>(
+    () => ({ animation: "vnBubbleFloatInRight 280ms ease-out" }),
+    [latestAssistantMessage?.id, latestAssistantMessage?.text],
+  );
+
   useEffect(() => {
     const handleResize = () => {
       setViewportSize({
@@ -302,6 +335,8 @@ function WindowShell() {
           {connectionState}
         </Text>
       </Box>
+
+      <style>{vnFloatInKeyframes}</style>
 
       <Flex
         flex="1"
@@ -372,45 +407,65 @@ function WindowShell() {
           <>
             {latestUserMessage?.text ? (
               <Box
+                key={`user-bubble-${latestUserMessage.id || latestUserMessage.text}`}
                 position="absolute"
-                left={isMobileWeb ? "8px" : "14px"}
-                bottom={isMobileWeb ? "84px" : "80px"}
-                w={isMobileWeb ? "132px" : "148px"}
-                minH={isMobileWeb ? "92px" : "104px"}
-                px="3"
+                left={isMobileWeb ? "4px" : "8px"}
+                bottom={isMobileWeb ? "82px" : "78px"}
+                w={isMobileWeb ? "114px" : "124px"}
+                minH={isMobileWeb ? "108px" : "126px"}
+                px="2.5"
                 py="3"
-                borderRadius="20px"
-                bg="rgba(255, 245, 240, 0.9)"
+                borderRadius="22px"
+                bg="linear-gradient(180deg, rgba(246,242,239,0.38) 0%, rgba(236,231,226,0.2) 100%)"
                 border="1px solid"
-                borderColor="rgba(220, 141, 121, 0.26)"
-                boxShadow="0 12px 28px rgba(121, 93, 77, 0.12)"
-                backdropFilter="blur(12px)"
+                borderColor="rgba(154, 140, 130, 0.16)"
+                boxShadow="0 10px 24px rgba(88, 70, 60, 0.07)"
+                backdropFilter="blur(16px) saturate(110%)"
                 zIndex="18"
+                style={userBubbleAnimation}
+                _before={{
+                  content: '""',
+                  position: "absolute",
+                  inset: "0",
+                  borderRadius: "inherit",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 70%)",
+                  pointerEvents: "none",
+                }}
               >
-                <Text fontSize="10px" color={lunariaColors.textSubtle} mb="1.5" fontWeight="700">你刚刚说</Text>
-                <Text noOfLines={4} whiteSpace="pre-wrap" fontSize="xs" lineHeight="1.65" color={lunariaColors.text}>{latestUserMessage.text}</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(92, 84, 78, 0.72)" mb="2" fontWeight="600">你刚刚说</Text>
+                <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="11px" lineHeight="1.72" color="rgba(62, 57, 54, 0.88)">{latestUserMessage.text}</Text>
               </Box>
             ) : null}
 
             {latestAssistantMessage?.text ? (
               <Box
+                key={`assistant-bubble-${latestAssistantMessage.id || latestAssistantMessage.text}`}
                 position="absolute"
-                right={isMobileWeb ? "8px" : "14px"}
-                top={isElectron ? "54px" : "58px"}
-                w={isMobileWeb ? "138px" : "156px"}
-                minH={isMobileWeb ? "102px" : "116px"}
-                px="3"
+                right={isMobileWeb ? "4px" : "8px"}
+                top={isElectron ? "46px" : "48px"}
+                w={isMobileWeb ? "120px" : "132px"}
+                minH={isMobileWeb ? "122px" : "142px"}
+                px="2.5"
                 py="3"
-                borderRadius="20px"
-                bg="rgba(248, 241, 236, 0.88)"
+                borderRadius="24px"
+                bg="linear-gradient(180deg, rgba(255,244,247,0.44) 0%, rgba(248,236,240,0.24) 100%)"
                 border="1px solid"
-                borderColor="rgba(176, 144, 122, 0.22)"
-                boxShadow="0 12px 28px rgba(121, 93, 77, 0.12)"
-                backdropFilter="blur(12px)"
+                borderColor="rgba(227, 183, 195, 0.2)"
+                boxShadow="0 12px 28px rgba(161, 118, 134, 0.09)"
+                backdropFilter="blur(18px) saturate(118%)"
                 zIndex="18"
+                style={assistantBubbleAnimation}
+                _before={{
+                  content: '""',
+                  position: "absolute",
+                  inset: "0",
+                  borderRadius: "inherit",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,245,248,0) 72%)",
+                  pointerEvents: "none",
+                }}
               >
-                <Text fontSize="10px" color={lunariaColors.textSubtle} mb="1.5" fontWeight="700">{assistantDisplayName || "她"}刚刚回你</Text>
-                <Text noOfLines={4} whiteSpace="pre-wrap" fontSize="xs" lineHeight="1.65" color={lunariaColors.text}>{latestAssistantMessage.text}</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(153, 104, 124, 0.72)" mb="2" fontWeight="700">{assistantDisplayName || "她"}刚刚回你</Text>
+                <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="11px" lineHeight="1.72" color="rgba(95, 72, 82, 0.92)">{latestAssistantMessage.text}</Text>
               </Box>
             ) : null}
           </>

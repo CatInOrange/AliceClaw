@@ -373,42 +373,44 @@ function WindowShell() {
             {latestUserMessage?.text ? (
               <Box
                 position="absolute"
-                left={isMobileWeb ? "10px" : "18px"}
-                bottom={isMobileWeb ? "86px" : "82px"}
-                maxW={isMobileWeb ? "46vw" : "280px"}
-                px="4"
+                left={isMobileWeb ? "8px" : "14px"}
+                bottom={isMobileWeb ? "84px" : "80px"}
+                w={isMobileWeb ? "132px" : "148px"}
+                minH={isMobileWeb ? "92px" : "104px"}
+                px="3"
                 py="3"
-                borderRadius="22px"
-                bg="rgba(255, 245, 240, 0.92)"
+                borderRadius="20px"
+                bg="rgba(255, 245, 240, 0.9)"
                 border="1px solid"
-                borderColor="rgba(220, 141, 121, 0.28)"
-                boxShadow="0 14px 36px rgba(121, 93, 77, 0.14)"
+                borderColor="rgba(220, 141, 121, 0.26)"
+                boxShadow="0 12px 28px rgba(121, 93, 77, 0.12)"
                 backdropFilter="blur(12px)"
                 zIndex="18"
               >
-                <Text fontSize="11px" color={lunariaColors.textSubtle} mb="1" fontWeight="700">你刚刚说</Text>
-                <Text noOfLines={2} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestUserMessage.text}</Text>
+                <Text fontSize="10px" color={lunariaColors.textSubtle} mb="1.5" fontWeight="700">你刚刚说</Text>
+                <Text noOfLines={4} whiteSpace="pre-wrap" fontSize="xs" lineHeight="1.65" color={lunariaColors.text}>{latestUserMessage.text}</Text>
               </Box>
             ) : null}
 
             {latestAssistantMessage?.text ? (
               <Box
                 position="absolute"
-                right={isMobileWeb ? "10px" : "18px"}
-                bottom={isMobileWeb ? "126px" : "122px"}
-                maxW={isMobileWeb ? "50vw" : "300px"}
-                px="4"
+                right={isMobileWeb ? "8px" : "14px"}
+                bottom={isMobileWeb ? "120px" : "116px"}
+                w={isMobileWeb ? "138px" : "156px"}
+                minH={isMobileWeb ? "102px" : "116px"}
+                px="3"
                 py="3"
-                borderRadius="22px"
-                bg="rgba(248, 241, 236, 0.9)"
+                borderRadius="20px"
+                bg="rgba(248, 241, 236, 0.88)"
                 border="1px solid"
-                borderColor="rgba(176, 144, 122, 0.24)"
-                boxShadow="0 14px 36px rgba(121, 93, 77, 0.14)"
+                borderColor="rgba(176, 144, 122, 0.22)"
+                boxShadow="0 12px 28px rgba(121, 93, 77, 0.12)"
                 backdropFilter="blur(12px)"
                 zIndex="18"
               >
-                <Text fontSize="11px" color={lunariaColors.textSubtle} mb="1" fontWeight="700">{assistantDisplayName || "她"}刚刚回你</Text>
-                <Text noOfLines={2} whiteSpace="pre-wrap" fontSize="sm" color={lunariaColors.text}>{latestAssistantMessage.text}</Text>
+                <Text fontSize="10px" color={lunariaColors.textSubtle} mb="1.5" fontWeight="700">{assistantDisplayName || "她"}刚刚回你</Text>
+                <Text noOfLines={4} whiteSpace="pre-wrap" fontSize="xs" lineHeight="1.65" color={lunariaColors.text}>{latestAssistantMessage.text}</Text>
               </Box>
             ) : null}
           </>

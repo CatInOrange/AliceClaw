@@ -411,8 +411,8 @@ function WindowShell() {
                 position="absolute"
                 left={isMobileWeb ? "4px" : "8px"}
                 bottom={isMobileWeb ? "82px" : "78px"}
-                w={isMobileWeb ? "114px" : "124px"}
-                minH={isMobileWeb ? "108px" : "126px"}
+                w={isMobileWeb ? "102px" : "112px"}
+                minH={isMobileWeb ? "112px" : "132px"}
                 px="2.5"
                 py="3"
                 borderRadius="22px"
@@ -432,7 +432,7 @@ function WindowShell() {
                   pointerEvents: "none",
                 }}
               >
-                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(92, 84, 78, 0.72)" mb="2" fontWeight="600">你刚刚说</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(92, 84, 78, 0.72)" mb="2" fontWeight="600">{formatChatMessageTimestamp(latestUserMessage.createdAt)}</Text>
                 <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="11px" lineHeight="1.72" color="rgba(62, 57, 54, 0.88)">{latestUserMessage.text}</Text>
               </Box>
             ) : null}
@@ -443,8 +443,8 @@ function WindowShell() {
                 position="absolute"
                 right={isMobileWeb ? "4px" : "8px"}
                 top={isElectron ? "46px" : "48px"}
-                w={isMobileWeb ? "120px" : "132px"}
-                minH={isMobileWeb ? "122px" : "142px"}
+                w={isMobileWeb ? "108px" : "118px"}
+                minH={isMobileWeb ? "126px" : "148px"}
                 px="2.5"
                 py="3"
                 borderRadius="24px"
@@ -464,7 +464,7 @@ function WindowShell() {
                   pointerEvents: "none",
                 }}
               >
-                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(153, 104, 124, 0.72)" mb="2" fontWeight="700">{assistantDisplayName || "她"}刚刚回你</Text>
+                <Text fontSize="9px" letterSpacing="0.08em" color="rgba(153, 104, 124, 0.72)" mb="2" fontWeight="700">{formatChatMessageTimestamp(latestAssistantMessage.createdAt)}</Text>
                 <Text noOfLines={5} whiteSpace="pre-wrap" fontSize="11px" lineHeight="1.72" color="rgba(95, 72, 82, 0.92)">{latestAssistantMessage.text}</Text>
               </Box>
             ) : null}

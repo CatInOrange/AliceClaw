@@ -296,7 +296,7 @@ function WindowShell() {
         flex="1"
         position="relative"
         overflow="hidden"
-        direction={isMobileWeb ? "column" : (isPortraitLayout ? "column" : "row")}
+        direction="column"
         borderRadius={isElectron ? "26px" : "0"}
         border="1px solid"
         borderColor={lunariaColors.border}
@@ -306,9 +306,9 @@ function WindowShell() {
         {isElectron ? <TitleBar /> : null}
 
         <Box
-          flex={isMobileWeb ? "1.5" : "1"}
-          minH={isMobileWeb ? "100dvh" : (isPortraitLayout ? "300px" : "0")}
-          maxH={isMobileWeb ? "none" : (isPortraitLayout ? "65vh" : "none")}
+          flex="1"
+          minH="0"
+          h="100%"
           position="relative"
           overflow="hidden"
         >
@@ -325,7 +325,7 @@ function WindowShell() {
               display="flex"
               alignItems="stretch"
               justifyContent={isMobileWeb ? "center" : "flex-start"}
-              pr={isMobileWeb ? "0" : "min(30vw, 420px)"}
+              pr={isMobileWeb ? "0" : "min(24vw, 360px)"}
             >
               <Box flex="1" minW="0" h="100%">
                 <Live2D />
@@ -336,25 +336,25 @@ function WindowShell() {
         </Box>
 
         <Box
-          w={isMobileWeb ? "calc(100% - 24px)" : (isPortraitLayout ? "100%" : { base: "360px", lg: "400px" })}
-          minW={isMobileWeb ? "0" : (isPortraitLayout ? "0" : { base: "360px", lg: "400px" })}
-          h={isMobileWeb ? "44dvh" : (isPortraitLayout ? "35vh" : "calc(100% - 32px)")}
-          minH={isMobileWeb ? "280px" : undefined}
-          maxH={isMobileWeb ? "48dvh" : "calc(100% - 32px)"}
-          px={isMobileWeb ? "3.5" : (isPortraitLayout ? "4" : "5")}
-          pt={isElectron ? "42px" : isMobileWeb ? "2.5" : (isPortraitLayout ? "3" : "4")}
-          pb={isMobileWeb ? "calc(env(safe-area-inset-bottom, 0px) + 12px)" : (isPortraitLayout ? "3" : "5")}
-          bg="linear-gradient(180deg, rgba(251,247,243,0.94) 0%, rgba(244,236,228,0.96) 100%)"
-          borderLeft={isPortraitLayout ? "0" : "1px solid"}
-          borderTop={isPortraitLayout ? "1px solid" : "0"}
-          borderColor={lunariaColors.border}
-          position={isMobileWeb ? "absolute" : "absolute"}
+          w={isMobileWeb ? "calc(100% - 24px)" : { base: "320px", lg: "340px" }}
+          minW={isMobileWeb ? "0" : { base: "320px", lg: "340px" }}
+          h={isMobileWeb ? "42dvh" : "calc(100% - 32px)"}
+          minH={isMobileWeb ? "260px" : "520px"}
+          maxH={isMobileWeb ? "46dvh" : "calc(100% - 32px)"}
+          px={isMobileWeb ? "3.5" : "4"}
+          pt={isElectron ? "42px" : isMobileWeb ? "2.5" : "3.5"}
+          pb={isMobileWeb ? "calc(env(safe-area-inset-bottom, 0px) + 12px)" : "4"}
+          bg="linear-gradient(180deg, rgba(251,247,243,0.88) 0%, rgba(244,236,228,0.92) 100%)"
+          border="1px solid"
+          borderColor="rgba(176, 144, 122, 0.35)"
+          position="absolute"
+          top={isMobileWeb ? "auto" : (isElectron ? "46px" : "16px")}
           right={isMobileWeb ? "12px" : "16px"}
           bottom={isMobileWeb ? "12px" : "16px"}
-          zIndex="8"
-          borderRadius={isMobileWeb ? "22px" : "26px"}
-          boxShadow="0 20px 60px rgba(88, 60, 46, 0.18)"
-          backdropFilter="blur(14px)"
+          zIndex="12"
+          borderRadius={isMobileWeb ? "22px" : "24px"}
+          boxShadow="0 24px 80px rgba(88, 60, 46, 0.22)"
+          backdropFilter="blur(18px)"
           overflow="hidden"
         >
           <Flex h="100%" direction="column" gap="0">

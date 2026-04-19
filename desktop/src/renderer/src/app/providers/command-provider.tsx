@@ -626,10 +626,28 @@ export function RendererCommandProvider({
       setAiState(AiStateEnum.IDLE);
     } catch (error) {
       if ((error as Error)?.name !== "AbortError") {
+        const errorName = (error as Error)?.name || "Error";
+        const errorMessage = (error as Error)?.message || String(error);
+        console.error("[chat] send failed", {
+          backendUrl: normalizedBackendUrl,
+          sessionId,
+          modelId: activeManifest.selectedModelId,
+          providerId,
+          payload: {
+            text: payload.text,
+            attachmentCount: payload.attachments?.length || 0,
+            messageSource: payload.messageSource || "chat",
+            ttsEnabled: state.ttsEnabled,
+            ttsProvider: state.ttsProvider,
+          },
+          error,
+          errorName,
+          errorMessage,
+        });
         toaster.create({
-          title: `聊天失败: ${error}`,
+          title: `聊天失败: ${errorName}: ${errorMessage}`,
           type: "error",
-          duration: 2800,
+          duration: 3600,
         });
         setAiState(AiStateEnum.IDLE);
       }

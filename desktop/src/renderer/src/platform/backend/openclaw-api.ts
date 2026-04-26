@@ -243,6 +243,27 @@ export function buildBackendUrl(baseUrl: string, path: string): string {
   return `${normalizedBase}${normalizedPath}`;
 }
 
+function getAppPassword(): string {
+  if (typeof window === 'undefined') return '';
+  return String(
+    (window as any).__ALICECHAT_APP_PASSWORD__ ||
+    new URLSearchParams(window.location.search).get('app_password') ||
+    localStorage.getItem('openclaw-live2d-app-password-v1') ||
+    ''
+  ).trim();
+}
+
+function buildAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const password = getAppPassword();
+  return {
+    ...extraHeaders,
+    ...(password ? {
+      'X-AliceChat-Password': password,
+      'Authorization': `Bearer ${password}`,
+    } : {}),
+  };
+}
+
 function reportFrontendFetchError(details: Record<string, unknown>): void {
   try {
     console.error('[frontend-fetch-error]', details);
@@ -259,9 +280,7 @@ function reportFrontendFetchError(details: Record<string, unknown>): void {
       });
       void fetch('/api/debug/frontend-error', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: payload,
         keepalive: true,
       }).catch(() => {});
@@ -276,10 +295,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(url, {
       ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init?.headers || {}),
-      },
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json', ...(init?.headers || {}) }),
     });
   } catch (error) {
     const err = error as Error;
@@ -401,13 +417,12 @@ export async function streamChat(
   },
 ): Promise<void> {
   const url = buildBackendUrl(baseUrl, '/api/chat/stream');
+  
   let response: Response;
   try {
     response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body),
       signal: handlers.signal,
     });
@@ -486,9 +501,10 @@ export function openEventsStream(
     onEvent: (event: EventsEnvelope) => void;
   },
 ): () => void {
+  const password = getAppPassword();
   const streamUrl = buildBackendUrl(
     baseUrl,
-    `/api/events/stream?since=${encodeURIComponent(String(options.since || 0))}`,
+    `/api/events/stream?since=${encodeURIComponent(String(options.since || 0))}${password ? `&app_password=${encodeURIComponent(password)}` : ''}`,
   );
   const eventSource = new EventSource(streamUrl);
 
@@ -539,9 +555,7 @@ export async function requestTts(
   try {
     response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body),
     });
   } catch (error) {

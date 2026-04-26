@@ -596,7 +596,8 @@ export function createLive2DController({ refs, layout, saveLayout, setStatus }) 
         document.body.appendChild(debugDiv);
         setTimeout(() => { debugDiv.remove(); }, 10000);
         console.log('[DEBUG] model position offset:', JSON.stringify(debugInfo));
-        fetch('/api/debug/model', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(debugInfo) }).catch(e => { console.error('Fetch failed:', e); });
+        const __alicePassword = String(window.__ALICECHAT_APP_PASSWORD__ || new URLSearchParams(window.location.search).get('app_password') || localStorage.getItem('openclaw-live2d-app-password-v1') || '').trim();
+        fetch('/api/debug/model', { method: 'POST', headers: {'Content-Type': 'application/json', ...(__alicePassword ? {'X-AliceChat-Password': __alicePassword, Authorization: `Bearer ${__alicePassword}`} : {})}, body: JSON.stringify(debugInfo) }).catch(e => { console.error('Fetch failed:', e); });
         requestAnimationFrame(() => { model.y += yOffset; });
     } catch (err) {
         console.error('[DEBUG ERROR]', err);

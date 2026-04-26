@@ -1104,6 +1104,17 @@ export class LAppModel extends CubismUserModel {
         })
         .then((arrayBuffer) => {
           if (!this.canContinueAsyncLoad(loadSessionId)) {
+            // 即使 session 不匹配，也应该更新进度
+            // 否则 motion 加载会永远卡住，导致 setupTextures 永远不被调用
+            const progress = applyFailedMotionPreload({
+              loadedCount: this._motionCount,
+              totalCount: this._allMotionCount,
+            });
+            this._motionCount = progress.loadedCount;
+            this._allMotionCount = progress.totalCount;
+            if (progress.shouldFinalizeSetup) {
+              this.finalizeMotionPreload();
+            }
             return;
           }
           // Add null check before loading motion

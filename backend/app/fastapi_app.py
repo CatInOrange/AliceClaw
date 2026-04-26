@@ -4,11 +4,12 @@ from contextlib import asynccontextmanager
 
 import asyncio
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .agents.openclaw_channel import ensure_bridge_listener, set_push_callback, stop_bridge_listener
+from .auth import verify_app_password
 from .app_context import create_app_context
 from .config import FRONTEND_DIR, UPLOADS_DIR, get_chat_providers
 from .routes import create_assets_router, create_chat_router, create_debug_router, create_events_router, create_runtime_router, create_sessions_router
@@ -114,11 +115,13 @@ def create_app() -> FastAPI:
         max_age=86400,
     )
 
-    app.include_router(create_runtime_router(context))
-    app.include_router(create_sessions_router(context))
-    app.include_router(create_events_router(context))
-    app.include_router(create_chat_router(context))
-    app.include_router(create_debug_router())
+    protected = [Depends(verify_app_password)]
+
+    app.include_router(create_runtime_router(context), dependencies=protected)
+    app.include_router(create_sessions_router(context), dependencies=protected)
+    app.include_router(create_events_router(context), dependencies=protected)
+    app.include_router(create_chat_router(context), dependencies=protected)
+    app.include_router(create_debug_router(), dependencies=protected)
     app.include_router(create_assets_router())
 
     app.mount('/uploads', StaticFiles(directory=str(context.uploads_dir), html=False), name='uploads')

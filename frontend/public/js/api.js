@@ -1,4 +1,4 @@
-import { absolutizeBackendAssetUrl, backendUrl } from './backend-url.js';
+import { absolutizeBackendAssetUrl, appendAuthQuery, backendUrl, buildAuthHeaders } from './backend-url.js';
 
 function absolutizeManifest(manifest) {
   const next = manifest ? JSON.parse(JSON.stringify(manifest)) : manifest;
@@ -18,22 +18,18 @@ function absolutizeManifest(manifest) {
 }
 
 export async function fetchModelManifest(modelId) {
-  const response = await fetch(backendUrl(`/api/model?model=${encodeURIComponent(modelId || '')}`));
+  const response = await fetch(backendUrl(appendAuthQuery(`/api/model?model=${encodeURIComponent(modelId || '')}`)), {
+    headers: buildAuthHeaders(),
+  });
   return absolutizeManifest(await response.json());
 }
 
-/**
- * Stream chat with support for text and image attachments.
- *
- * @param {Object} payload - Chat payload
- * @param {string} payload.text - User message text
- * @param {string} payload.modelId - Model ID
- * @param {string} payload.providerId - Provider ID
- * @param {Array} [payload.attachments] - Array of attachment objects (for sending images)
- * @param {Function} onEvent - Event callback
- */
 export async function streamChat(payload, onEvent) {
-  const response = await fetch(backendUrl('/api/chat/stream'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const response = await fetch(backendUrl('/api/chat/stream'), {
+    method: 'POST',
+    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  });
   if (!response.ok || !response.body) {
     let message = `HTTP ${response.status}`;
     try { const data = await response.json(); message = data.error || message; } catch {}
@@ -84,7 +80,7 @@ export async function requestTts(text, ttsProvider, mode) {
   });
   const response = await fetch(backendUrl('/api/tts'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -110,7 +106,7 @@ export async function requestTts(text, ttsProvider, mode) {
 }
 
 export async function fetchSessions() {
-  const response = await fetch(backendUrl('/api/sessions'));
+  const response = await fetch(backendUrl('/api/sessions'), { headers: buildAuthHeaders() });
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
     try { const data = await response.json(); message = data.error || message; } catch {}
@@ -121,7 +117,9 @@ export async function fetchSessions() {
 
 export async function fetchSessionMessages(sessionId) {
   if (!sessionId) throw new Error('missing session id');
-  const response = await fetch(backendUrl(`/api/sessions/${encodeURIComponent(sessionId)}/messages`));
+  const response = await fetch(backendUrl(`/api/sessions/${encodeURIComponent(sessionId)}/messages`), {
+    headers: buildAuthHeaders(),
+  });
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
     try {
@@ -136,7 +134,7 @@ export async function fetchSessionMessages(sessionId) {
 export async function createSession(name) {
   const response = await fetch(backendUrl('/api/sessions'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ name }),
   });
   if (!response.ok) {
@@ -151,6 +149,7 @@ export async function selectSession(sessionId) {
   if (!sessionId) throw new Error('missing session id');
   const response = await fetch(backendUrl(`/api/sessions/${encodeURIComponent(sessionId)}/select`), {
     method: 'POST',
+    headers: buildAuthHeaders(),
   });
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
@@ -167,7 +166,7 @@ export async function createSessionMessage(sessionId, payload) {
   if (!sessionId) throw new Error('missing session id');
   const response = await fetch(backendUrl(`/api/sessions/${encodeURIComponent(sessionId)}/messages`), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload || {}),
   });
   if (!response.ok) {
@@ -183,7 +182,7 @@ export async function createSessionMessage(sessionId, payload) {
 
 export function openEventsStream({ onEvent, onOpen, onError } = {}) {
   const since = Number(localStorage.getItem('openclaw.eventSeq') || 0) || 0;
-  const es = new EventSource(backendUrl(`/api/events/stream?since=${encodeURIComponent(since)}`));
+  const es = new EventSource(backendUrl(appendAuthQuery(`/api/events/stream?since=${encodeURIComponent(since)}`)));
   es.onopen = () => {
     if (typeof onOpen === 'function') onOpen();
   };
@@ -211,30 +210,16 @@ export function openEventsStream({ onEvent, onOpen, onError } = {}) {
   return es;
 }
 
-/**
- * Image attachment utilities for the chat composer.
- */
 export function createAttachmentManager() {
   const attachments = [];
 
-  /**
-   * Add an image from a URL.
-   * @param {string} url - Image URL
-   * @returns {Object} Attachment object
-   */
   function addImageUrl(url) {
     const att = { type: 'url', data: url, id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
     attachments.push(att);
     return att;
   }
 
-  /**
-   * Add an image from a base64 data URL.
-   * @param {string} dataUrl - Data URL (data:image/xxx;base64,...)
-   * @returns {Object} Attachment object
-   */
   function addImageBase64(dataUrl) {
-    // Extract media type and base64 data from data URL
     const match = dataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
     if (!match) throw new Error('Invalid image data URL');
     const att = { type: 'base64', data: match[2], mediaType: match[1], id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, preview: dataUrl };
@@ -242,11 +227,6 @@ export function createAttachmentManager() {
     return att;
   }
 
-  /**
-   * Add an image from a File object.
-   * @param {File} file - Image file
-   * @returns {Promise<Object>} Attachment object
-   */
   function addImageFile(file) {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {
@@ -267,42 +247,23 @@ export function createAttachmentManager() {
     });
   }
 
-  /**
-   * Remove an attachment by ID.
-   * @param {string} id - Attachment ID
-   */
   function removeAttachment(id) {
     const idx = attachments.findIndex((a) => a.id === id);
     if (idx !== -1) attachments.splice(idx, 1);
   }
 
-  /**
-   * Clear all attachments.
-   */
   function clearAttachments() {
     attachments.length = 0;
   }
 
-  /**
-   * Get all attachments.
-   * @returns {Array} Array of attachment objects
-   */
   function getAttachments() {
     return [...attachments];
   }
 
-  /**
-   * Check if there are any attachments.
-   * @returns {boolean}
-   */
   function hasAttachments() {
     return attachments.length > 0;
   }
 
-  /**
-   * Get attachments in the format expected by the backend.
-   * @returns {Array}
-   */
   function toBackendFormat() {
     return attachments.map((att) => ({
       type: att.type,

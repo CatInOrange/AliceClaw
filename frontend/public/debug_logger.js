@@ -7,6 +7,14 @@
   'use strict';
   
   const LOG_ENDPOINT = '/api/debug/webgl';
+
+  function getAuthHeaders() {
+    const password = String(window.__ALICECHAT_APP_PASSWORD__ || new URLSearchParams(window.location.search).get('app_password') || localStorage.getItem('openclaw-live2d-app-password-v1') || '').trim();
+    return password ? {
+      'X-AliceChat-Password': password,
+      Authorization: `Bearer ${password}`,
+    } : {};
+  }
   
   // Send log to server
   function sendLog(level, message, data) {
@@ -21,7 +29,7 @@
     
     fetch(LOG_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(payload),
       keepalive: true
     }).catch(function(e) {

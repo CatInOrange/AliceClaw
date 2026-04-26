@@ -122,7 +122,8 @@ desktopShell = createDesktopShellController({
 async function boot() {
   console.error('[APP.JS] boot() function started!');
   // Send test to backend to verify app.js is loaded
-  fetch('/api/debug/model', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({test: 'app.js boot() started', timestamp: new Date().toISOString()}) }).catch(e => console.error('Fetch failed:', e));
+  const __alicePassword = String(window.__ALICECHAT_APP_PASSWORD__ || new URLSearchParams(window.location.search).get('app_password') || localStorage.getItem('openclaw-live2d-app-password-v1') || '').trim();
+  fetch('/api/debug/model', { method: 'POST', headers: {'Content-Type': 'application/json', ...(__alicePassword ? {'X-AliceChat-Password': __alicePassword, Authorization: `Bearer ${__alicePassword}`} : {})}, body: JSON.stringify({test: 'app.js boot() started', timestamp: new Date().toISOString()}) }).catch(e => console.error('Fetch failed:', e));
   automation = createAutomationController({ refs, uiConfig, ui, chat, desktopShell });
   pluginHost.api.chat = chat;
   pluginHost.api.desktop = desktopShell;
